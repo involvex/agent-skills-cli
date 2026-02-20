@@ -3,39 +3,43 @@
  * Generates system prompt XML for skill discovery
  */
 
-import type { SkillRef, Skill, SkillPromptXML } from '../types/index.js';
+import type { SkillRef, Skill, SkillPromptXML } from "../types/index.js";
 
 /**
  * Generate XML for system prompt injection (Level 1 - metadata only)
  * This is what gets injected at startup for skill discovery
  */
 export function generateSkillsPromptXML(skills: SkillRef[]): SkillPromptXML {
-    if (skills.length === 0) {
-        return {
-            xml: '',
-            skillCount: 0,
-            estimatedTokens: 0
-        };
-    }
+  if (skills.length === 0) {
+    return {
+      xml: "",
+      skillCount: 0,
+      estimatedTokens: 0,
+    };
+  }
 
-    const skillElements = skills.map(skill => `
+  const skillElements = skills
+    .map(
+      (skill) => `
   <skill>
     <name>${escapeXML(skill.name)}</name>
     <description>${escapeXML(skill.description)}</description>
     <location>${escapeXML(skill.path)}/SKILL.md</location>
-  </skill>`).join('');
+  </skill>`,
+    )
+    .join("");
 
-    const xml = `<available_skills>${skillElements}
+  const xml = `<available_skills>${skillElements}
 </available_skills>`;
 
-    // Estimate tokens (~4 chars per token)
-    const estimatedTokens = Math.ceil(xml.length / 4);
+  // Estimate tokens (~4 chars per token)
+  const estimatedTokens = Math.ceil(xml.length / 4);
 
-    return {
-        xml,
-        skillCount: skills.length,
-        estimatedTokens
-    };
+  return {
+    xml,
+    skillCount: skills.length,
+    estimatedTokens,
+  };
 }
 
 /**
@@ -43,22 +47,22 @@ export function generateSkillsPromptXML(skills: SkillRef[]): SkillPromptXML {
  * This is what gets sent when a skill is triggered
  */
 export function generateSkillActivationPrompt(skill: Skill): string {
-    const lines: string[] = [
-        `<skill_activated name="${escapeXML(skill.metadata.name)}">`,
-        '',
-        skill.body,
-        '',
-        '</skill_activated>'
-    ];
+  const lines: string[] = [
+    `<skill_activated name="${escapeXML(skill.metadata.name)}">`,
+    "",
+    skill.body,
+    "",
+    "</skill_activated>",
+  ];
 
-    return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
  * Generate instructions for the agent on how to use skills
  */
 export function generateSkillSystemInstructions(): string {
-    return `## Agent Skills System
+  return `## Agent Skills System
 
 You have access to specialized skills that extend your capabilities. Each skill provides domain-specific instructions for particular tasks.
 
@@ -85,14 +89,14 @@ You have access to specialized skills that extend your capabilities. Each skill 
  * Generate a combined system prompt section with skills
  */
 export function generateFullSkillsContext(skills: SkillRef[]): string {
-    const instructions = generateSkillSystemInstructions();
-    const { xml } = generateSkillsPromptXML(skills);
+  const instructions = generateSkillSystemInstructions();
+  const { xml } = generateSkillsPromptXML(skills);
 
-    if (!xml) {
-        return '';
-    }
+  if (!xml) {
+    return "";
+  }
 
-    return `${instructions}
+  return `${instructions}
 
 ### Installed Skills:
 ${xml}
@@ -103,10 +107,10 @@ ${xml}
  * Escape special XML characters
  */
 function escapeXML(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }

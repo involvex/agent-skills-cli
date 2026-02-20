@@ -12,7 +12,7 @@ Install skills from the world's largest marketplace and sync them to **42 AI age
 🌐 **Website:** [agentskills.in](https://agentskills.in)
 
 ```bash
-npm install -g agent-skills-cli
+npm install -g @involvex/agent-skills-cli
 skills install @anthropic/xlsx
 ```
 
@@ -45,7 +45,7 @@ skills install @anthropic/xlsx
 ## 📦 Installation
 
 ```bash
-npm install -g agent-skills-cli
+npm install -g @involvex/agent-skills-cli
 ```
 
 **Requirements:** Node.js 18+
@@ -103,32 +103,32 @@ skills search python
 
 ### Core Commands
 
-| Command | Description |
-|---------|-------------|
-| `skills install <name>` | Install a skill from marketplace |
-| `skills add <source>` | Install from Git repo (owner/repo or URL) |
-| `skills search <query>` | Search and install skills interactively |
-| `skills search -i` | FZF-style interactive search with keyboard navigation |
-| `skills check` | Check installed skills with source and version info |
-| `skills update` | Update skills from their source repos |
-| `skills remove` | Remove installed skills (interactive multi-select) |
-| `skills score [path]` | Score skill quality (0–100, grades F–A) |
-| `skills submit-repo <repo>` | Submit a GitHub repo for marketplace auto-indexing |
-| `skills doctor` | Diagnose issues (`--deep` for conflict detection) |
+| Command                     | Description                                           |
+| --------------------------- | ----------------------------------------------------- |
+| `skills install <name>`     | Install a skill from marketplace                      |
+| `skills add <source>`       | Install from Git repo (owner/repo or URL)             |
+| `skills search <query>`     | Search and install skills interactively               |
+| `skills search -i`          | FZF-style interactive search with keyboard navigation |
+| `skills check`              | Check installed skills with source and version info   |
+| `skills update`             | Update skills from their source repos                 |
+| `skills remove`             | Remove installed skills (interactive multi-select)    |
+| `skills score [path]`       | Score skill quality (0–100, grades F–A)               |
+| `skills submit-repo <repo>` | Submit a GitHub repo for marketplace auto-indexing    |
+| `skills doctor`             | Diagnose issues (`--deep` for conflict detection)     |
 
 ### Power Tools (v1.1.4)
 
-| Command | Description |
-|---------|-------------|
-| `skills budget -b <tokens>` | Smart context budget — load only relevant skills within limit |
-| `skills diff <A> <B>` | Section-aware skill comparison |
-| `skills compose <skills...>` | Merge/chain/conditional skill composition |
-| `skills test [skills...]` | Run quality assertions against skills |
-| `skills frozen` | Deterministic install from lockfile |
-| `skills sandbox <source>` | Preview skill quality + conflicts before installing |
-| `skills watch [dir]` | Auto-sync skills to agents on file changes |
-| `skills split <skill>` | Split large skills into focused sub-skills |
-| `skills bench [skills...]` | Benchmark and compare skill quality |
+| Command                      | Description                                                   |
+| ---------------------------- | ------------------------------------------------------------- |
+| `skills budget -b <tokens>`  | Smart context budget — load only relevant skills within limit |
+| `skills diff <A> <B>`        | Section-aware skill comparison                                |
+| `skills compose <skills...>` | Merge/chain/conditional skill composition                     |
+| `skills test [skills...]`    | Run quality assertions against skills                         |
+| `skills frozen`              | Deterministic install from lockfile                           |
+| `skills sandbox <source>`    | Preview skill quality + conflicts before installing           |
+| `skills watch [dir]`         | Auto-sync skills to agents on file changes                    |
+| `skills split <skill>`       | Split large skills into focused sub-skills                    |
+| `skills bench [skills...]`   | Benchmark and compare skill quality                           |
 
 ### Install Options
 
@@ -219,18 +219,18 @@ skills submit-repo vercel-labs/agent-skills   # Skills appear on marketplace
 
 ## 🤖 Supported Platforms (42 Agents)
 
-| Platform | Project Dir | Global Dir |
-|----------|-------------|------------|
-| **Cursor** | `.cursor/skills/` | `~/.cursor/skills/` |
-| **Claude Code** | `.claude/skills/` | `~/.claude/skills/` |
-| **GitHub Copilot** | `.github/skills/` | `~/.github/skills/` |
-| **OpenAI Codex** | `.codex/skills/` | `~/.codex/skills/` |
-| **Windsurf** | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
-| **Cline** | `.cline/skills/` | `~/.cline/skills/` |
-| **Gemini CLI** | `.gemini/skills/` | `~/.gemini/skills/` |
-| **Zed** | `.zed/skills/` | `~/.config/zed/skills/` |
-| **Antigravity** | `.agent/skills/` | `~/.gemini/antigravity/skills/` |
-| **OpenCode** | `.opencode/skill/` | `~/.config/opencode/skill/` |
+| Platform           | Project Dir         | Global Dir                      |
+| ------------------ | ------------------- | ------------------------------- |
+| **Cursor**         | `.cursor/skills/`   | `~/.cursor/skills/`             |
+| **Claude Code**    | `.claude/skills/`   | `~/.claude/skills/`             |
+| **GitHub Copilot** | `.github/skills/`   | `~/.github/skills/`             |
+| **OpenAI Codex**   | `.codex/skills/`    | `~/.codex/skills/`              |
+| **Windsurf**       | `.windsurf/skills/` | `~/.codeium/windsurf/skills/`   |
+| **Cline**          | `.cline/skills/`    | `~/.cline/skills/`              |
+| **Gemini CLI**     | `.gemini/skills/`   | `~/.gemini/skills/`             |
+| **Zed**            | `.zed/skills/`      | `~/.config/zed/skills/`         |
+| **Antigravity**    | `.agent/skills/`    | `~/.gemini/antigravity/skills/` |
+| **OpenCode**       | `.opencode/skill/`  | `~/.config/opencode/skill/`     |
 
 **+32 more agents:** Amp, Kilo, Roo, Goose, CodeBuddy, Continue, Crush, Clawdbot, Droid, Kiro, MCPJam, Mux, OpenHands, Pi, Qoder, Qwen Code, Trae, Zencoder, Neovate, Command Code, Ara, Aide, Alex, BB, CodeStory, Helix AI, Meekia, Pear AI, Adal, Pochi, Sourcegraph Cody, Void AI
 
@@ -269,13 +269,13 @@ Config is loaded from: project `.skillsrc` → home `~/.skillsrc` (first found w
 
 ## 🔐 Environment Variables
 
-| Variable | Purpose |
-|----------|---------|  
-| `GH_TOKEN` / `GITHUB_TOKEN` | GitHub private repo authentication |
-| `GITLAB_TOKEN` / `GL_TOKEN` | GitLab private repo authentication |
-| `BITBUCKET_TOKEN` / `BB_TOKEN` | Bitbucket private repo authentication |
-| `GIT_TOKEN` | Generic Git authentication (any host) |
-| `DISABLE_TELEMETRY` / `DO_NOT_TRACK` | Opt out of anonymous telemetry |
+| Variable                             | Purpose                               |
+| ------------------------------------ | ------------------------------------- |
+| `GH_TOKEN` / `GITHUB_TOKEN`          | GitHub private repo authentication    |
+| `GITLAB_TOKEN` / `GL_TOKEN`          | GitLab private repo authentication    |
+| `BITBUCKET_TOKEN` / `BB_TOKEN`       | Bitbucket private repo authentication |
+| `GIT_TOKEN`                          | Generic Git authentication (any host) |
+| `DISABLE_TELEMETRY` / `DO_NOT_TRACK` | Opt out of anonymous telemetry        |
 
 Telemetry is automatically disabled in CI environments.
 
@@ -310,22 +310,8 @@ skills export
 - **Website:** [agentskills.in](https://agentskills.in)
 - **Marketplace:** [agentskills.in/marketplace](https://agentskills.in/marketplace)
 - **Documentation:** [agentskills.in/docs](https://agentskills.in/docs)
-- **CLI GitHub:** [github.com/Karanjot786/agent-skills-cli](https://github.com/Karanjot786/agent-skills-cli)
+- **CLI GitHub:** [github.com/Kinvolvex/agent-skills-cli](https://github.com/involvex/agent-skills-cli)
 - **Website GitHub:** [github.com/Karanjot786/agent-skills-UI](https://github.com/Karanjot786/agent-skills-UI)
 - **npm:** [npmjs.com/package/agent-skills-cli](https://www.npmjs.com/package/agent-skills-cli)
 
 ---
-
-## 👤 Author
-
-**Karanjot Singh**
-
-- 🐦 [@Karanjotdulay](https://x.com/Karanjotdulay)
-- 💼 [LinkedIn](https://www.linkedin.com/in/karanjot786/)
-- 🐙 [@Karanjot786](https://github.com/Karanjot786)
-
----
-
-## 📄 License
-
-MIT © [Karanjot Singh](https://github.com/Karanjot786)

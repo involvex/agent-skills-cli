@@ -13,7 +13,7 @@ Thank you for your interest in contributing! 🎉
 
 ```bash
 # Clone the repo
-git clone https://github.com/Karanjot786/agent-skills-cli.git
+git clone https://github.com/involvex/agent-skills-cli.git
 cd agent-skills-cli
 
 # Install dependencies
@@ -45,13 +45,10 @@ node dist/cli/index.js --help
 ## Testing
 
 Before submitting:
+
 ```bash
 npm run build
 skills --help
 skills market-list --limit 5
 skills install pdf
 ```
-
-## Questions?
-
-Open an issue or reach out on [GitHub Discussions](https://github.com/Karanjot786/agent-skills-cli/discussions).

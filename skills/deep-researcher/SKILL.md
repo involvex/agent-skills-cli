@@ -14,6 +14,7 @@ A comprehensive research workflow skill that guides Claude through systematic, m
 ## When to use this skill
 
 Use this skill when the user:
+
 - Asks for "deep research" or "comprehensive research" on a topic
 - Needs thorough investigation or due diligence
 - Requests market research or competitive analysis
@@ -156,7 +157,7 @@ Copy and update this checklist as you work:
 ```
 Research Progress:
 - [ ] Step 1: Define scope and objectives
-- [ ] Step 2: Initial exploratory research  
+- [ ] Step 2: Initial exploratory research
 - [ ] Step 3: Deep dive into key areas
 - [ ] Step 4: Cross-reference and validate
 - [ ] Step 5: Synthesize and analyze
