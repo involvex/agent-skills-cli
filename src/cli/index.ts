@@ -57,16 +57,21 @@ import { registerSuggestCommand } from "./commands/suggest.js";
 import { registerTrackCommand } from "./commands/track.js";
 import { registerTriggerCommand } from "./commands/trigger.js";
 
+import { registerAgentCommands } from "./commands/agent.js";
 import { registerBenchCommand } from "./commands/bench.js";
 import { registerComposeCommand } from "./commands/compose.js";
 // ─── v1.1.4 Unique Feature Commands ────────────────────────────────────────
 import { registerContextCommand } from "./commands/context.js";
 import { registerDiffCommand } from "./commands/diff.js";
 import { registerFrozenCommand } from "./commands/frozen.js";
+import { registerHooksCommands } from "./commands/hooks.js";
+// ─── Unified Package Manager Commands ───────────────────────────────────────
+import { registerMCPCommands } from "./commands/mcp.js";
 import { registerSandboxCommand } from "./commands/sandbox.js";
 import { registerSplitCommand } from "./commands/split.js";
 import { registerTestCommand } from "./commands/test.js";
 import { registerWatchCommand } from "./commands/watch.js";
+import { registerDevCommand } from "./interactive.js";
 
 // ─── Program setup ─────────────────────────────────────────────────────────
 
@@ -344,5 +349,11 @@ registerSandboxCommand(program);
 registerWatchCommand(program);
 registerSplitCommand(program);
 registerBenchCommand(program);
+
+// ─── Unified Package Manager Commands ───────────────────────────────────────
+registerMCPCommands(program);
+registerAgentCommands(program);
+registerHooksCommands(program);
+registerDevCommand(program);
 
 program.parse();
