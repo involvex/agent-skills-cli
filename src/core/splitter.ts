@@ -3,9 +3,9 @@
  * Splits a monolithic skill into focused sub-skills based on topic sections.
  */
 
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-import { join, basename } from "path";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import matter from "gray-matter";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -44,13 +44,8 @@ export interface SplitResult {
  * @param skillPath — path to skill directory or SKILL.md
  * @param minSections — minimum sections per sub-skill (default 2)
  */
-export async function splitSkill(
-  skillPath: string,
-  minSections: number = 2,
-): Promise<SplitResult> {
-  const skillMd = skillPath.endsWith("SKILL.md")
-    ? skillPath
-    : join(skillPath, "SKILL.md");
+export async function splitSkill(skillPath: string, minSections = 2): Promise<SplitResult> {
+  const skillMd = skillPath.endsWith("SKILL.md") ? skillPath : join(skillPath, "SKILL.md");
   if (!existsSync(skillMd)) throw new Error(`SKILL.md not found at ${skillMd}`);
 
   const raw = await readFile(skillMd, "utf-8");
@@ -89,9 +84,7 @@ export async function splitSkill(
   const subSkills: SplitSkill[] = groups.map((group, i) => {
     const subName = group.suggestedName || `${name}-part-${i + 1}`;
     const headings = group.sections.map((s) => s.heading);
-    const body = group.sections
-      .map((s) => `## ${s.heading}\n${s.content}`)
-      .join("\n\n");
+    const body = group.sections.map((s) => `## ${s.heading}\n${s.content}`).join("\n\n");
 
     const fullContent = [
       "---",
@@ -145,7 +138,7 @@ function parseSections(body: string): Section[] {
           heading: currentHeading,
           level: currentLevel,
           content,
-          keywords: extractKeywords(currentHeading + " " + content),
+          keywords: extractKeywords(`${currentHeading} ${content}`),
         });
       }
       currentHeading = match[2].trim();
@@ -162,7 +155,7 @@ function parseSections(body: string): Section[] {
       heading: currentHeading,
       level: currentLevel,
       content,
-      keywords: extractKeywords(currentHeading + " " + content),
+      keywords: extractKeywords(`${currentHeading} ${content}`),
     });
   }
 
@@ -176,10 +169,7 @@ interface SectionGroup {
   suggestedName: string;
 }
 
-function clusterSections(
-  sections: Section[],
-  minPerGroup: number,
-): SectionGroup[] {
+function clusterSections(sections: Section[], minPerGroup: number): SectionGroup[] {
   // Topic categories for clustering
   const topicGroups: Record<string, string[]> = {
     setup: [
@@ -201,16 +191,7 @@ function clusterSections(
       "eslint",
       "pattern",
     ],
-    testing: [
-      "test",
-      "spec",
-      "jest",
-      "vitest",
-      "mocha",
-      "assert",
-      "coverage",
-      "mock",
-    ],
+    testing: ["test", "spec", "jest", "vitest", "mocha", "assert", "coverage", "mock"],
     architecture: [
       "architecture",
       "structure",
@@ -220,55 +201,12 @@ function clusterSections(
       "design",
       "layer",
     ],
-    deployment: [
-      "deploy",
-      "build",
-      "ci",
-      "cd",
-      "docker",
-      "kubernetes",
-      "production",
-      "hosting",
-    ],
-    security: [
-      "security",
-      "auth",
-      "token",
-      "password",
-      "encrypt",
-      "cors",
-      "xss",
-      "vulnerability",
-    ],
-    api: [
-      "api",
-      "rest",
-      "graphql",
-      "endpoint",
-      "route",
-      "middleware",
-      "handler",
-    ],
-    database: [
-      "database",
-      "sql",
-      "query",
-      "model",
-      "schema",
-      "migration",
-      "orm",
-      "prisma",
-    ],
+    deployment: ["deploy", "build", "ci", "cd", "docker", "kubernetes", "production", "hosting"],
+    security: ["security", "auth", "token", "password", "encrypt", "cors", "xss", "vulnerability"],
+    api: ["api", "rest", "graphql", "endpoint", "route", "middleware", "handler"],
+    database: ["database", "sql", "query", "model", "schema", "migration", "orm", "prisma"],
     documentation: ["doc", "readme", "changelog", "comment", "jsdoc", "tsdoc"],
-    performance: [
-      "performance",
-      "optimize",
-      "cache",
-      "lazy",
-      "bundle",
-      "minify",
-      "compress",
-    ],
+    performance: ["performance", "optimize", "cache", "lazy", "bundle", "minify", "compress"],
   };
 
   // Assign each section to a topic
@@ -289,7 +227,7 @@ function clusterSections(
     }
 
     if (!assigned.has(bestTopic)) assigned.set(bestTopic, []);
-    assigned.get(bestTopic)!.push(section);
+    assigned.get(bestTopic)?.push(section);
   }
 
   // Filter groups that have enough sections

@@ -1,23 +1,16 @@
+import chalk from "chalk";
 /**
  * `skills search` command — Search and install skills from marketplace (67K+ skills)
  */
-import { Command } from "commander";
-import chalk from "chalk";
-import ora from "ora";
+import type { Command } from "commander";
 import inquirer from "inquirer";
-import {
-  fetchSkillsForCLI,
-  installFromGitHubUrl,
-  searchSkills,
-} from "../../core/index.js";
-import { AGENTS, AgentConfig } from "../agents.js";
+import ora from "ora";
+import { fetchSkillsForCLI, installFromGitHubUrl, searchSkills } from "../../core/index.js";
+import { AGENTS, type AgentConfig } from "../agents.js";
 import { fzfSearch } from "../fzf-search.js";
 
 /** Install a skill from its database record into a target directory */
-async function installSkillFromDatabase(
-  skill: any,
-  targetDir: string,
-): Promise<string> {
+async function installSkillFromDatabase(skill: any, targetDir: string): Promise<string> {
   const githubUrl = skill.github_url || skill.githubUrl;
   if (githubUrl) {
     const result = await installFromGitHubUrl(githubUrl, targetDir);
@@ -44,7 +37,7 @@ export function registerSearchInstallCommand(program: Command) {
         }
 
         const query = queryParts.join(" ");
-        const limit = parseInt(options.limit) || 20;
+        const limit = Number.parseInt(options.limit) || 20;
         const sortBy = options.sort || "stars";
 
         const spinner = ora("Searching marketplace...").start();
@@ -69,9 +62,7 @@ export function registerSearchInstallCommand(program: Command) {
         spinner.stop();
 
         if (skills.length === 0) {
-          console.log(
-            chalk.yellow(`\nNo skills found${query ? ` for "${query}"` : ""}.`),
-          );
+          console.log(chalk.yellow(`\nNo skills found${query ? ` for "${query}"` : ""}.`));
           return;
         }
 
@@ -88,10 +79,8 @@ export function registerSearchInstallCommand(program: Command) {
         );
 
         // Display results with install option
-        const choices = skills.map((skill: any, i: number) => {
-          const stars = skill.stars
-            ? chalk.yellow(`⭐${skill.stars.toLocaleString()}`)
-            : "";
+        const choices = skills.map((skill: any, _i: number) => {
+          const stars = skill.stars ? chalk.yellow(`⭐${skill.stars.toLocaleString()}`) : "";
           const desc = skill.description ? skill.description.slice(0, 50) : "";
           return {
             name: `${chalk.cyan(skill.scoped_name || skill.name)} ${stars}\n    ${chalk.gray(desc)}`,
@@ -119,13 +108,11 @@ export function registerSearchInstallCommand(program: Command) {
         if (!selected) return;
 
         // Select agents
-        const agentChoices = Object.entries(AGENTS).map(
-          ([key, config]: [string, AgentConfig]) => ({
-            name: config.displayName,
-            value: key,
-            checked: key === "cursor" || key === "claude",
-          }),
-        );
+        const agentChoices = Object.entries(AGENTS).map(([key, config]: [string, AgentConfig]) => ({
+          name: config.displayName,
+          value: key,
+          checked: key === "cursor" || key === "claude",
+        }));
 
         const { agents } = await inquirer.prompt([
           {
@@ -162,8 +149,7 @@ export function registerSearchInstallCommand(program: Command) {
         ).start();
 
         try {
-          const { addSkillToLock, createLockEntry } =
-            await import("../../core/index.js");
+          const { addSkillToLock, createLockEntry } = await import("../../core/index.js");
 
           let installDir: string;
           if (selected.github_url || selected.raw_url) {
@@ -172,11 +158,11 @@ export function registerSearchInstallCommand(program: Command) {
             for (const agent of agents) {
               const config = AGENTS[agent];
               const targetDir = isGlobal ? config.globalDir : config.projectDir;
-              const { mkdir, cp, rm } = await import("fs/promises");
-              const { tmpdir } = await import("os");
-              const { join } = await import("path");
-              const { exec } = await import("child_process");
-              const { promisify } = await import("util");
+              const { mkdir, cp, rm } = await import("node:fs/promises");
+              const { tmpdir } = await import("node:os");
+              const { join } = await import("node:path");
+              const { exec } = await import("node:child_process");
+              const { promisify } = await import("node:util");
               const execAsync = promisify(exec);
 
               const tempDir = join(tmpdir(), `skill-install-${Date.now()}`);
@@ -187,9 +173,7 @@ export function registerSearchInstallCommand(program: Command) {
               const skillDir = join(targetDir, skillName);
               await mkdir(skillDir, { recursive: true });
               await cp(tempDir, skillDir, { recursive: true });
-              await rm(tempDir, { recursive: true, force: true }).catch(
-                () => {},
-              );
+              await rm(tempDir, { recursive: true, force: true }).catch(() => {});
 
               installDir = skillDir;
             }
@@ -206,10 +190,7 @@ export function registerSearchInstallCommand(program: Command) {
           const lockEntry = createLockEntry({
             name: selected.name,
             scopedName: selected.scoped_name || selected.name,
-            source:
-              selected.github_url ||
-              selected.raw_url ||
-              `database:${selected.name}`,
+            source: selected.github_url || selected.raw_url || `database:${selected.name}`,
             sourceType: selected.github_url ? "github" : "database",
             version: selected.version,
             agents,
@@ -218,16 +199,12 @@ export function registerSearchInstallCommand(program: Command) {
           });
           await addSkillToLock(lockEntry);
 
-          installSpinner.succeed(
-            `Installed ${selected.scoped_name || selected.name}`,
-          );
+          installSpinner.succeed(`Installed ${selected.scoped_name || selected.name}`);
 
           for (const agent of agents) {
             const config = AGENTS[agent];
             const dir = isGlobal ? config.globalDir : config.projectDir;
-            console.log(
-              chalk.gray(`  → ${config.displayName}: ${dir}/${selected.name}`),
-            );
+            console.log(chalk.gray(`  → ${config.displayName}: ${dir}/${selected.name}`));
           }
           console.log("");
         } catch (err: any) {

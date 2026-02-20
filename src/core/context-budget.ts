@@ -10,9 +10,9 @@
  *   4. Recency boost             — recently installed skills get a small bump
  */
 
-import { readFile, readdir, stat } from "fs/promises";
-import { existsSync } from "fs";
-import { join, extname, basename } from "path";
+import { existsSync } from "node:fs";
+import { readFile, readdir } from "node:fs/promises";
+import { basename, extname, join } from "node:path";
 import matter from "gray-matter";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -159,9 +159,7 @@ interface ProjectSignals {
 /**
  * Analyze the project directory to extract signals.
  */
-async function analyzeProjectSignals(
-  projectDir: string,
-): Promise<ProjectSignals> {
+async function analyzeProjectSignals(projectDir: string): Promise<ProjectSignals> {
   const languages: Set<string> = new Set();
   const dependencies: Set<string> = new Set();
   const fileKeywords: Set<string> = new Set();
@@ -183,18 +181,14 @@ async function analyzeProjectSignals(
         ...pkg.devDependencies,
       };
       for (const dep of Object.keys(allDeps || {})) {
-        dependencies.add(
-          dep.replace(/^@/, "").replace(/\//g, "-").toLowerCase(),
-        );
+        dependencies.add(dep.replace(/^@/, "").replace(/\//g, "-").toLowerCase());
         // Also add the base name
         const lastPart = dep.split("/").pop();
         if (lastPart) dependencies.add(lastPart.toLowerCase());
       }
       // Also add scripts keywords
       if (pkg.scripts) {
-        for (const script of Object.values(
-          pkg.scripts as Record<string, string>,
-        )) {
+        for (const script of Object.values(pkg.scripts as Record<string, string>)) {
           const words = script.split(/\s+/).filter((w: string) => w.length > 3);
           words.forEach((w: string) => fileKeywords.add(w.toLowerCase()));
         }
@@ -256,11 +250,7 @@ async function scanExtensions(
 
   const entries = await readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
-    if (
-      entry.name.startsWith(".") ||
-      entry.name === "node_modules" ||
-      entry.name === "dist"
-    )
+    if (entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === "dist")
       continue;
 
     if (entry.isFile()) {
@@ -272,13 +262,7 @@ async function scanExtensions(
       if (nameWithoutExt.length > 2) fileKeywords.add(nameWithoutExt);
     } else if (entry.isDirectory()) {
       fileKeywords.add(entry.name.toLowerCase());
-      await scanExtensions(
-        join(dir, entry.name),
-        languages,
-        fileKeywords,
-        depth + 1,
-        maxDepth,
-      );
+      await scanExtensions(join(dir, entry.name), languages, fileKeywords, depth + 1, maxDepth);
     }
   }
 }
@@ -292,9 +276,7 @@ async function scoreSkillRelevance(
   skillPath: string,
   signals: ProjectSignals,
 ): Promise<SkillWithRelevance | null> {
-  const skillMd = skillPath.endsWith("SKILL.md")
-    ? skillPath
-    : join(skillPath, "SKILL.md");
+  const skillMd = skillPath.endsWith("SKILL.md") ? skillPath : join(skillPath, "SKILL.md");
   if (!existsSync(skillMd)) return null;
 
   try {
@@ -327,19 +309,12 @@ async function scoreSkillRelevance(
     score += fileScore;
 
     // 4. Description match against all signals (0-10 points)
-    const allSignals = [
-      ...signals.languages,
-      ...signals.dependencies,
-      ...signals.fileKeywords,
-    ];
+    const allSignals = [...signals.languages, ...signals.dependencies, ...signals.fileKeywords];
     const descWords = skillDescription.split(/\s+/);
     const descHits = descWords.filter((w: string) =>
       allSignals.some((s: string) => s.includes(w) || w.includes(s)),
     ).length;
-    const descScore = Math.min(
-      10,
-      (descHits / Math.max(1, descWords.length)) * 30,
-    );
+    const descScore = Math.min(10, (descHits / Math.max(1, descWords.length)) * 30);
     if (descScore > 0) reasons.push(`desc match: ${Math.round(descScore)}pts`);
     score += descScore;
 

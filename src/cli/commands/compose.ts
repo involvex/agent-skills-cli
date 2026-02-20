@@ -1,9 +1,9 @@
+import chalk from "chalk";
 /**
  * Compose Command
  * Merge multiple skills into a single super-skill.
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
 
 export function registerComposeCommand(program: Command) {
@@ -11,19 +11,15 @@ export function registerComposeCommand(program: Command) {
     .command("compose <skills...>")
     .description("Compose multiple skills into a single super-skill")
     .requiredOption("-o, --output <name>", "Output skill name")
-    .option(
-      "-s, --strategy <strategy>",
-      "Merge strategy: merge, chain, conditional",
-      "merge",
-    )
+    .option("-s, --strategy <strategy>", "Merge strategy: merge, chain, conditional", "merge")
     .option("--no-dedup", "Disable deduplication of similar bullets")
     .option("--save <dir>", "Save composed skill to directory")
     .action(async (skills: string[], options: any) => {
       try {
-        const { existsSync } = await import("fs");
-        const { writeFile, mkdir } = await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
+        const { existsSync } = await import("node:fs");
+        const { writeFile, mkdir } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
         const { composeSkills } = await import("../../core/composer.js");
 
         const home = homedir();
@@ -53,9 +49,7 @@ export function registerComposeCommand(program: Command) {
           return;
         }
 
-        const spinner = ora(
-          `Composing ${resolvedPaths.length} skills...`,
-        ).start();
+        const spinner = ora(`Composing ${resolvedPaths.length} skills...`).start();
 
         const result = await composeSkills({
           skills: resolvedPaths,
@@ -66,13 +60,9 @@ export function registerComposeCommand(program: Command) {
 
         spinner.succeed(`Composed "${chalk.bold(result.name)}"`);
         console.log("");
-        console.log(
-          `  Source skills: ${result.sourceSkills.map((s) => chalk.cyan(s)).join(", ")}`,
-        );
+        console.log(`  Source skills: ${result.sourceSkills.map((s) => chalk.cyan(s)).join(", ")}`);
         console.log(`  Strategy:      ${chalk.bold(options.strategy)}`);
-        console.log(
-          `  Token count:   ${chalk.yellow(String(result.tokenCount))}`,
-        );
+        console.log(`  Token count:   ${chalk.yellow(String(result.tokenCount))}`);
         if (result.deduplicatedCount > 0) {
           console.log(
             `  Deduplicated:  ${chalk.green(String(result.deduplicatedCount))} redundant lines removed`,
@@ -83,9 +73,7 @@ export function registerComposeCommand(program: Command) {
         const saveDir = options.save || join(skillsDir, result.name);
         await mkdir(saveDir, { recursive: true });
         await writeFile(join(saveDir, "SKILL.md"), result.fullContent);
-        console.log(
-          `  Saved to:      ${chalk.gray(join(saveDir, "SKILL.md"))}`,
-        );
+        console.log(`  Saved to:      ${chalk.gray(join(saveDir, "SKILL.md"))}`);
         console.log("");
       } catch (error: any) {
         console.error(chalk.red("Error:"), error.message || error);

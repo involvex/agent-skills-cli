@@ -4,14 +4,13 @@
  * (SkillKit calls this "translate" — we call it "convert")
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { basename, dirname, join, resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join, basename, dirname } from "path";
-import { getAdapter, AGENTS } from "../agents.js";
-import type { ParsedSkillInput } from "../../adapters/adapter.js";
+import { AGENTS, getAdapter } from "../agents.js";
 
 interface ConvertOptions {
   output?: string;
@@ -30,21 +29,17 @@ export function registerConvertCommand(program: Command): void {
   program
     .command("convert <source> <target-format>")
     .alias("cv")
-    .description(
-      `Convert skills between agent formats (${VALID_FORMATS.join(", ")})`,
-    )
+    .description(`Convert skills between agent formats (${VALID_FORMATS.join(", ")})`)
     .option("-o, --output <path>", "Output file path (default: auto)")
     .option("--overwrite", "Overwrite existing output file")
-    .action(
-      async (source: string, targetFormat: string, options: ConvertOptions) => {
-        try {
-          await convertCommand(source, targetFormat as AgentFormat, options);
-        } catch (err: any) {
-          console.error(chalk.red("Error:"), err.message);
-          process.exit(1);
-        }
-      },
-    );
+    .action(async (source: string, targetFormat: string, options: ConvertOptions) => {
+      try {
+        await convertCommand(source, targetFormat as AgentFormat, options);
+      } catch (err: any) {
+        console.error(chalk.red("Error:"), err.message);
+        process.exit(1);
+      }
+    });
 }
 
 async function convertCommand(
@@ -93,11 +88,7 @@ async function convertCommand(
   // Determine output path using adapter
   const outputPath = options.output
     ? resolve(options.output)
-    : join(
-        dirname(sourcePath),
-        adapter.getProjectDir(),
-        adapter.getSkillFilename(),
-      );
+    : join(dirname(sourcePath), adapter.getProjectDir(), adapter.getSkillFilename());
 
   if (existsSync(outputPath) && !options.overwrite) {
     spinner.fail(`Output file exists: ${outputPath}`);
@@ -135,13 +126,12 @@ function detectFormat(filePath: string, content: string): AgentFormat | null {
   if (filename === "skill.md") return "antigravity";
 
   // Try content-based detection
-  if (content.startsWith("---\n") && content.includes("name:"))
-    return "antigravity";
+  if (content.startsWith("---\n") && content.includes("name:")) return "antigravity";
 
   return null;
 }
 
-function parseSkillContent(content: string, format: AgentFormat): ParsedSkill {
+function parseSkillContent(content: string, _format: AgentFormat): ParsedSkill {
   const parsed: ParsedSkill = {
     name: "",
     description: "",
@@ -163,8 +153,8 @@ function parseSkillContent(content: string, format: AgentFormat): ParsedSkill {
           parsed.frontmatter[key] = val;
         }
       }
-      parsed.name = parsed.frontmatter["name"] || "";
-      parsed.description = parsed.frontmatter["description"] || "";
+      parsed.name = parsed.frontmatter.name || "";
+      parsed.description = parsed.frontmatter.description || "";
       content = content.substring(endIdx + 5);
     }
   }

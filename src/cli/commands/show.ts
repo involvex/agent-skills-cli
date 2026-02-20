@@ -1,20 +1,16 @@
+import chalk from "chalk";
 /**
  * `skills show`, `skills prompt`, and `skills init` commands
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import {
   discoverSkills,
-  loadSkill,
-  listSkillResources,
-  generateSkillsPromptXML,
   generateFullSkillsContext,
+  generateSkillsPromptXML,
+  listSkillResources,
+  loadSkill,
 } from "../../core/index.js";
-import {
-  assessQuality,
-  formatScoreBar,
-  getScoreColor,
-} from "../../core/quality.js";
+import { assessQuality, formatScoreBar, getScoreColor } from "../../core/quality.js";
 
 export function registerShowCommand(program: Command) {
   // Show command
@@ -51,10 +47,7 @@ export function registerShowCommand(program: Command) {
         }
 
         if (skill.metadata.compatibility) {
-          console.log(
-            chalk.cyan("Compatibility:"),
-            skill.metadata.compatibility,
-          );
+          console.log(chalk.cyan("Compatibility:"), skill.metadata.compatibility);
         }
 
         // List resources
@@ -65,9 +58,7 @@ export function registerShowCommand(program: Command) {
         }
         if (resources.references.length > 0) {
           console.log(chalk.cyan("\nReferences:"));
-          resources.references.forEach((r) =>
-            console.log(chalk.gray(`  - ${r}`)),
-          );
+          resources.references.forEach((r) => console.log(chalk.gray(`  - ${r}`)));
         }
         if (resources.assets.length > 0) {
           console.log(chalk.cyan("\nAssets:"));
@@ -121,12 +112,9 @@ export function registerShowCommand(program: Command) {
           const context = generateFullSkillsContext(skills);
           console.log(context);
         } else {
-          const { xml, skillCount, estimatedTokens } =
-            generateSkillsPromptXML(skills);
+          const { xml, skillCount, estimatedTokens } = generateSkillsPromptXML(skills);
           console.log(xml);
-          console.log(
-            chalk.gray(`\n# ${skillCount} skills, ~${estimatedTokens} tokens`),
-          );
+          console.log(chalk.gray(`\n# ${skillCount} skills, ~${estimatedTokens} tokens`));
         }
       } catch (error) {
         console.error(chalk.red("Error generating prompt:"), error);
@@ -141,8 +129,8 @@ export function registerShowCommand(program: Command) {
     .option("-d, --directory <dir>", "Directory to create skill in", "./skills")
     .action(async (name, options) => {
       try {
-        const { mkdir, writeFile } = await import("fs/promises");
-        const { join } = await import("path");
+        const { mkdir, writeFile } = await import("node:fs/promises");
+        const { join } = await import("node:path");
 
         const skillDir = join(options.directory, name);
 
@@ -197,7 +185,7 @@ Example input or command
         console.log(chalk.gray("\nNext steps:"));
         console.log(chalk.gray("  1. Edit SKILL.md with your instructions"));
         console.log(chalk.gray("  2. Add scripts to scripts/"));
-        console.log(chalk.gray("  3. Run: skills validate " + skillDir));
+        console.log(chalk.gray(`  3. Run: skills validate ${skillDir}`));
       } catch (error) {
         console.error(chalk.red("Error creating skill:"), error);
         process.exit(1);

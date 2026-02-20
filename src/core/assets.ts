@@ -79,9 +79,7 @@ export function parseRawUrl(rawUrl: string): {
  * Fetch asset manifest (index.jsonl) if skill has one
  * Returns array of asset entries or null if no manifest exists
  */
-export async function fetchAssetManifest(
-  baseUrl: string,
-): Promise<AssetEntry[] | null> {
+export async function fetchAssetManifest(baseUrl: string): Promise<AssetEntry[] | null> {
   const manifestUrl = `${baseUrl}/assets/index.jsonl`;
 
   try {
@@ -117,7 +115,7 @@ export async function listAssetsFromGitHub(
   };
 
   if (token) {
-    headers["Authorization"] = `token ${token}`;
+    headers.Authorization = `token ${token}`;
   }
 
   try {
@@ -161,9 +159,7 @@ export async function fetchAsset(assetUrl: string): Promise<string | null> {
 /**
  * Fetch asset as binary (for images, etc)
  */
-export async function fetchAssetBinary(
-  assetUrl: string,
-): Promise<ArrayBuffer | null> {
+export async function fetchAssetBinary(assetUrl: string): Promise<ArrayBuffer | null> {
   try {
     const resp = await fetch(assetUrl);
     if (!resp.ok) return null;
@@ -196,12 +192,7 @@ export async function getSkillAssets(
   // Fallback to GitHub API
   const parsed = parseRawUrl(rawUrl);
   if (parsed) {
-    const files = await listAssetsFromGitHub(
-      parsed.owner,
-      parsed.repo,
-      parsed.path,
-      githubToken,
-    );
+    const files = await listAssetsFromGitHub(parsed.owner, parsed.repo, parsed.path, githubToken);
     if (files.length > 0) {
       return { assets: files, source: "github-api" };
     }

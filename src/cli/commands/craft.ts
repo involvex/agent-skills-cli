@@ -4,12 +4,12 @@
  * (SkillKit calls this "create" — we call it "craft")
  */
 
-import chalk from "chalk";
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import * as p from "@clack/prompts";
-import { mkdir, writeFile } from "fs/promises";
-import { existsSync } from "fs";
-import { join, resolve } from "path";
-import { Command } from "commander";
+import chalk from "chalk";
+import type { Command } from "commander";
 
 export interface CraftOptions {
   full?: boolean;
@@ -26,10 +26,7 @@ export function registerCraftCommand(program: Command): void {
   program
     .command("craft <name>")
     .description("Craft a new skill with full structure")
-    .option(
-      "-f, --full",
-      "Include all optional directories (scripts, references, assets)",
-    )
+    .option("-f, --full", "Include all optional directories (scripts, references, assets)")
     .option("-s, --scripts", "Include scripts/ directory with templates")
     .option("-r, --references", "Include references/ directory")
     .option("-a, --assets", "Include assets/ directory")
@@ -47,10 +44,7 @@ export function registerCraftCommand(program: Command): void {
 /**
  * Run the craft command
  */
-async function craftCommand(
-  name: string,
-  options: CraftOptions,
-): Promise<void> {
+async function craftCommand(name: string, options: CraftOptions): Promise<void> {
   const baseDir = resolve(options.dir || ".");
   const skillDir = join(baseDir, name);
 
@@ -107,7 +101,7 @@ async function craftCommand(
   }
 
   // Create .gitignore
-  await writeFile(join(skillDir, ".gitignore"), `node_modules/\n.env\n*.log\n`);
+  await writeFile(join(skillDir, ".gitignore"), "node_modules/\n.env\n*.log\n");
 
   spinner.stop(`Skill "${name}" crafted successfully!`);
   console.log("");
@@ -115,9 +109,7 @@ async function craftCommand(
   // Show created structure
   console.log(chalk.bold("📁 Created structure:"));
   console.log(`  ${chalk.cyan(name)}/`);
-  console.log(
-    `  ├── ${chalk.green("SKILL.md")}          ${chalk.dim("← Main skill file")}`,
-  );
+  console.log(`  ├── ${chalk.green("SKILL.md")}          ${chalk.dim("← Main skill file")}`);
   console.log(`  ├── ${chalk.dim(".gitignore")}`);
 
   if (includeScripts) {
@@ -129,32 +121,20 @@ async function craftCommand(
 
   if (includeReferences) {
     console.log(`  ├── ${chalk.blue("references/")}`);
-    console.log(`  │   └── README.md`);
+    console.log("  │   └── README.md");
   }
 
   if (includeAssets) {
     console.log(`  └── ${chalk.magenta("assets/")}`);
-    console.log(`      └── .gitkeep`);
+    console.log("      └── .gitkeep");
   }
 
   console.log("");
   console.log(chalk.dim("Next steps:"));
-  console.log(
-    chalk.dim(`  1. Edit ${name}/SKILL.md to add your skill content`),
-  );
-  console.log(
-    chalk.dim(
-      `  2. Run ${chalk.white(`skills validate ${name}`)} to check format`,
-    ),
-  );
-  console.log(
-    chalk.dim(
-      `  3. Run ${chalk.white(`skills audit ${name}`)} for security scan`,
-    ),
-  );
-  console.log(
-    chalk.dim(`  4. Run ${chalk.white(`skills submit ${name}`)} to publish`),
-  );
+  console.log(chalk.dim(`  1. Edit ${name}/SKILL.md to add your skill content`));
+  console.log(chalk.dim(`  2. Run ${chalk.white(`skills validate ${name}`)} to check format`));
+  console.log(chalk.dim(`  3. Run ${chalk.white(`skills audit ${name}`)} for security scan`));
+  console.log(chalk.dim(`  4. Run ${chalk.white(`skills submit ${name}`)} to publish`));
   console.log("");
 }
 

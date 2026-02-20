@@ -1,9 +1,9 @@
+import chalk from "chalk";
 /**
  * Skill Diff Command
  * Compare two skills side-by-side.
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 
 export function registerDiffCommand(program: Command) {
   program
@@ -12,10 +12,10 @@ export function registerDiffCommand(program: Command) {
     .option("--json", "Output as JSON")
     .action(async (skillA: string, skillB: string, options: any) => {
       try {
-        const { existsSync } = await import("fs");
-        const { readdir } = await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
+        const { existsSync } = await import("node:fs");
+        const { readdir } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
         const { diffSkills } = await import("../../core/differ.js");
 
         const home = homedir();
@@ -35,9 +35,7 @@ export function registerDiffCommand(program: Command) {
           const projectPath = join(process.cwd(), ".claude", "skills", input);
           if (existsSync(join(projectPath, "SKILL.md"))) return projectPath;
 
-          throw new Error(
-            `Skill "${input}" not found. Provide a name or path.`,
-          );
+          throw new Error(`Skill "${input}" not found. Provide a name or path.`);
         };
 
         const pathA = await resolveSkill(skillA);
@@ -60,9 +58,7 @@ export function registerDiffCommand(program: Command) {
         console.log(chalk.gray(`  ${result.skillA}: ${result.linesA} lines`));
         console.log(chalk.gray(`  ${result.skillB}: ${result.linesB} lines`));
         const tokenSign = result.tokenDelta >= 0 ? "+" : "";
-        console.log(
-          chalk.gray(`  Token delta: ${tokenSign}${result.tokenDelta}`),
-        );
+        console.log(chalk.gray(`  Token delta: ${tokenSign}${result.tokenDelta}`));
         console.log("");
 
         // Added sections
@@ -85,9 +81,7 @@ export function registerDiffCommand(program: Command) {
 
         // Changed sections
         if (result.changed.length > 0) {
-          console.log(
-            chalk.yellow(`  ✏️  Changed (${result.changed.length}):`),
-          );
+          console.log(chalk.yellow(`  ✏️  Changed (${result.changed.length}):`));
           for (const diff of result.changed) {
             console.log(
               `    ${chalk.bold(diff.heading)} ${chalk.gray(`(+${diff.linesAdded}/-${diff.linesRemoved} lines)`)}`,
@@ -107,21 +101,16 @@ export function registerDiffCommand(program: Command) {
 
         // Unchanged sections
         if (result.unchanged.length > 0) {
-          console.log(
-            chalk.gray(`  ✓ Unchanged: ${result.unchanged.join(", ")}`),
-          );
+          console.log(chalk.gray(`  ✓ Unchanged: ${result.unchanged.join(", ")}`));
           console.log("");
         }
 
         // Summary
-        const totalChanges =
-          result.added.length + result.removed.length + result.changed.length;
+        const totalChanges = result.added.length + result.removed.length + result.changed.length;
         if (totalChanges === 0) {
           console.log(chalk.green("  Skills are identical.\n"));
         } else {
-          console.log(
-            chalk.gray(`  Total: ${totalChanges} differences found.\n`),
-          );
+          console.log(chalk.gray(`  Total: ${totalChanges} differences found.\n`));
         }
       } catch (error: any) {
         console.error(chalk.red("Error:"), error.message || error);

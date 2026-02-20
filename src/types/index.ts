@@ -129,6 +129,91 @@ export interface ScriptResult {
   executionTime: number;
 }
 
+/**
+ * Component types supported by the unified package manager
+ */
+export enum ComponentType {
+  SKILL = "skill",
+  AGENT = "agent",
+  MCP = "mcp",
+  HOOK = "hook",
+}
+
+/**
+ * Generic component configuration
+ */
+export interface ComponentConfig {
+  type: ComponentType;
+  name: string;
+  source: ParsedSource;
+  version?: string;
+  platforms?: string[];
+}
+
+/**
+ * Parsed source information (re-exported from source-parser)
+ */
+export interface ParsedSource {
+  type:
+    | "local"
+    | "github"
+    | "gitlab"
+    | "bitbucket"
+    | "npm"
+    | "private-git"
+    | "direct-url"
+    | "well-known";
+  url: string;
+  localPath?: string;
+  ref?: string;
+  subpath?: string;
+  registry?: string;
+  sshHost?: string;
+}
+
+/**
+ * Agent installation configuration
+ */
+export interface AgentInstallConfig {
+  name: string;
+  executable?: string;
+  version?: string;
+  config?: Record<string, unknown>;
+}
+
+/**
+ * MCP server installation configuration
+ */
+export interface MCPInstallConfig {
+  name: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  type?: "stdio" | "sse";
+}
+
+/**
+ * Hook installation configuration
+ */
+export interface HookInstallConfig {
+  name: string;
+  type: "SessionStart" | "SessionEnd" | "PreToolUse" | "PostToolUse";
+  script: string;
+  priority?: number;
+}
+
+/**
+ * Installation result for components
+ */
+export interface InstallResult {
+  success: boolean;
+  installations: Array<{
+    agent: string;
+    method: "symlink" | "copy";
+    path: string;
+  }>;
+}
+
 // Re-export marketplace types
 export type {
   MarketplaceSource,

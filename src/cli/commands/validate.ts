@@ -1,13 +1,13 @@
+import chalk from "chalk";
 /**
  * `skills validate` command — Validate a skill against the Agent Skills specification
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import {
-  loadSkill,
-  validateMetadata,
-  validateBody,
   formatValidationResult,
+  loadSkill,
+  validateBody,
+  validateMetadata,
 } from "../../core/index.js";
 
 export function registerValidateCommand(program: Command) {
@@ -37,7 +37,7 @@ export function registerValidateCommand(program: Command) {
 
         // Overall result
         const isValid = metadataResult.valid && bodyResult.valid;
-        console.log("\n" + "─".repeat(40));
+        console.log(`\n${"─".repeat(40)}`);
         if (isValid) {
           console.log(chalk.green.bold("✓ Skill is valid"));
         } else {

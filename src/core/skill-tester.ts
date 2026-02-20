@@ -8,9 +8,9 @@
  *   3. Built-in structural checks
  */
 
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-import { join, basename } from "path";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import matter from "gray-matter";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -67,9 +67,7 @@ function getBuiltinTests(): SkillTest[] {
       type: "structure",
       assertion: "SKILL.md must have a description field in frontmatter",
       check: (_content, data) =>
-        !!data.description &&
-        typeof data.description === "string" &&
-        data.description.length > 10,
+        !!data.description && typeof data.description === "string" && data.description.length > 10,
     },
     {
       name: "Has meaningful content",
@@ -87,15 +85,13 @@ function getBuiltinTests(): SkillTest[] {
       name: 'Has "when to use" section',
       type: "content",
       assertion: "Should describe when the skill should be used",
-      check: (content) =>
-        /when\s+to\s+use|usage|use\s+cases?|scenarios?/i.test(content),
+      check: (content) => /when\s+to\s+use|usage|use\s+cases?|scenarios?/i.test(content),
     },
     {
       name: "Has actionable instructions",
       type: "content",
       assertion: "Should contain numbered steps or bullet points",
-      check: (content) =>
-        /^\s*[-*]\s+.+/m.test(content) || /^\s*\d+\.\s+.+/m.test(content),
+      check: (content) => /^\s*[-*]\s+.+/m.test(content) || /^\s*\d+\.\s+.+/m.test(content),
     },
     {
       name: "Has code examples",
@@ -107,17 +103,13 @@ function getBuiltinTests(): SkillTest[] {
       name: "Description is concise",
       type: "quality",
       assertion: "Description should be under 200 characters",
-      check: (_content, data) =>
-        !data.description || data.description.length <= 200,
+      check: (_content, data) => !data.description || data.description.length <= 200,
     },
     {
       name: "No placeholder content",
       type: "quality",
       assertion: "Should not contain TODO, FIXME, or placeholder text",
-      check: (content) =>
-        !/\b(TODO|FIXME|PLACEHOLDER|CHANGE\s+ME|INSERT\s+HERE)\b/i.test(
-          content,
-        ),
+      check: (content) => !/\b(TODO|FIXME|PLACEHOLDER|CHANGE\s+ME|INSERT\s+HERE)\b/i.test(content),
     },
     {
       name: "Reasonable length",
@@ -164,8 +156,7 @@ async function loadCustomTests(skillDir: string): Promise<SkillTest[]> {
         }
         if (t.expect_sections) {
           for (const section of t.expect_sections) {
-            if (!new RegExp(`^#{2,4}\\s+${section}`, "im").test(content))
-              pass = false;
+            if (!new RegExp(`^#{2,4}\\s+${section}`, "im").test(content)) pass = false;
           }
         }
         return pass;
@@ -185,12 +176,8 @@ async function loadCustomTests(skillDir: string): Promise<SkillTest[]> {
  */
 export async function testSkill(skillPath: string): Promise<TestResult> {
   const start = Date.now();
-  const skillMd = skillPath.endsWith("SKILL.md")
-    ? skillPath
-    : join(skillPath, "SKILL.md");
-  const skillDir = skillPath.endsWith("SKILL.md")
-    ? join(skillPath, "..")
-    : skillPath;
+  const skillMd = skillPath.endsWith("SKILL.md") ? skillPath : join(skillPath, "SKILL.md");
+  const skillDir = skillPath.endsWith("SKILL.md") ? join(skillPath, "..") : skillPath;
 
   if (!existsSync(skillMd)) {
     throw new Error(`SKILL.md not found at ${skillMd}`);

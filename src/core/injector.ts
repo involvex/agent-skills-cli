@@ -3,7 +3,7 @@
  * Generates system prompt XML for skill discovery
  */
 
-import type { SkillRef, Skill, SkillPromptXML } from "../types/index.js";
+import type { Skill, SkillPromptXML, SkillRef } from "../types/index.js";
 
 /**
  * Generate XML for system prompt injection (Level 1 - metadata only)

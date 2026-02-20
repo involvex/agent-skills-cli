@@ -14,9 +14,7 @@ export class CursorAdapter extends BaseAdapter {
   }
 
   supportsFormat(format: string): boolean {
-    return (
-      format === "skill.md" || format === "cursorrules" || format === "mdc"
-    );
+    return format === "skill.md" || format === "cursorrules" || format === "mdc";
   }
 
   generateConfig(parsed: ParsedSkillInput): string {

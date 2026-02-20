@@ -9,9 +9,9 @@
  *   Advanced     (10%) — scripts, references, assets, anti-patterns, changelog
  */
 
-import { readFile, stat, readdir } from "fs/promises";
-import { existsSync } from "fs";
-import { join, resolve } from "path";
+import { existsSync } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
+import { join, resolve } from "node:path";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -104,11 +104,7 @@ export async function assessQuality(skillPath: string): Promise<QualityScore> {
 
 // ── Dimension 1: Structure (30%) ─────────────────────────────────────────
 
-function scoreStructure(
-  content: string,
-  dir: string,
-  details: ScoreDetail[],
-): number {
+function scoreStructure(content: string, dir: string, details: ScoreDetail[]): number {
   let score = 0;
   const max = 100;
 
@@ -134,9 +130,7 @@ function scoreStructure(
     hasFrontmatter,
     hasFrontmatter ? 25 : 0,
     25,
-    hasFrontmatter
-      ? undefined
-      : "Add YAML frontmatter with --- delimiters at the top",
+    hasFrontmatter ? undefined : "Add YAML frontmatter with --- delimiters at the top",
   );
   if (hasFrontmatter) score += 25;
 
@@ -215,9 +209,7 @@ function scoreClarity(content: string, details: ScoreDetail[]): number {
     hasHeadings,
     hasHeadings ? 20 : 0,
     20,
-    hasHeadings
-      ? undefined
-      : "Add ## headings to organize your skill into logical sections",
+    hasHeadings ? undefined : "Add ## headings to organize your skill into logical sections",
   );
   if (hasHeadings) score += 20;
 
@@ -230,9 +222,7 @@ function scoreClarity(content: string, details: ScoreDetail[]): number {
     hasUsage,
     hasUsage ? 15 : 0,
     15,
-    hasUsage
-      ? undefined
-      : 'Add a "When to Use" section so agents know when to activate this skill',
+    hasUsage ? undefined : 'Add a "When to Use" section so agents know when to activate this skill',
   );
   if (hasUsage) score += 15;
 
@@ -259,9 +249,7 @@ function scoreClarity(content: string, details: ScoreDetail[]): number {
     bodyPts > 0,
     bodyPts,
     15,
-    bodyPts > 0
-      ? undefined
-      : "Add more content — skills under 20 lines are rarely comprehensive",
+    bodyPts > 0 ? undefined : "Add more content — skills under 20 lines are rarely comprehensive",
   );
   score += bodyPts;
 
@@ -275,9 +263,7 @@ function scoreClarity(content: string, details: ScoreDetail[]): number {
     cleanFormat,
     cleanFormat ? 15 : 0,
     15,
-    cleanFormat
-      ? undefined
-      : "Remove excessive blank lines for better readability",
+    cleanFormat ? undefined : "Remove excessive blank lines for better readability",
   );
   if (cleanFormat) score += 15;
 
@@ -300,9 +286,7 @@ function scoreSpecificity(content: string, details: ScoreDetail[]): number {
     hasCode,
     hasCode ? 25 : 0,
     25,
-    hasCode
-      ? undefined
-      : "Add code blocks with concrete examples agents can follow",
+    hasCode ? undefined : "Add code blocks with concrete examples agents can follow",
   );
   if (hasCode) score += 25;
 
@@ -315,15 +299,12 @@ function scoreSpecificity(content: string, details: ScoreDetail[]): number {
     hasSteps,
     hasSteps ? 20 : 0,
     20,
-    hasSteps
-      ? undefined
-      : "Use numbered steps (1. 2. 3.) for step-by-step instructions",
+    hasSteps ? undefined : "Use numbered steps (1. 2. 3.) for step-by-step instructions",
   );
   if (hasSteps) score += 20;
 
   // Check 3: References specific tools or commands (15 pts)
-  const hasToolRefs =
-    /`[a-z]+\s+[a-z]+`|npm\s+|npx\s+|git\s+|docker\s+|curl\s+/i.test(content);
+  const hasToolRefs = /`[a-z]+\s+[a-z]+`|npm\s+|npx\s+|git\s+|docker\s+|curl\s+/i.test(content);
   addDetail(
     details,
     "specificity",
@@ -331,9 +312,7 @@ function scoreSpecificity(content: string, details: ScoreDetail[]): number {
     hasToolRefs,
     hasToolRefs ? 15 : 0,
     15,
-    hasToolRefs
-      ? undefined
-      : "Reference specific CLI commands or tools the agent should use",
+    hasToolRefs ? undefined : "Reference specific CLI commands or tools the agent should use",
   );
   if (hasToolRefs) score += 15;
 
@@ -346,9 +325,7 @@ function scoreSpecificity(content: string, details: ScoreDetail[]): number {
     hasFilePaths,
     hasFilePaths ? 15 : 0,
     15,
-    hasFilePaths
-      ? undefined
-      : "Include file paths or extensions the skill targets",
+    hasFilePaths ? undefined : "Include file paths or extensions the skill targets",
   );
   if (hasFilePaths) score += 15;
 
@@ -363,15 +340,12 @@ function scoreSpecificity(content: string, details: ScoreDetail[]): number {
     hasConditional,
     hasConditional ? 10 : 0,
     10,
-    hasConditional
-      ? undefined
-      : "Add conditional rules (IF...THEN) for nuanced agent behavior",
+    hasConditional ? undefined : "Add conditional rules (IF...THEN) for nuanced agent behavior",
   );
   if (hasConditional) score += 10;
 
   // Check 6: Constraints / "Do NOT" rules (15 pts)
-  const hasConstraints =
-    /\bdo\s+not\b|\bdon't\b|\bnever\b|\bavoid\b|\bmust\s+not\b/i.test(content);
+  const hasConstraints = /\bdo\s+not\b|\bdon't\b|\bnever\b|\bavoid\b|\bmust\s+not\b/i.test(content);
   addDetail(
     details,
     "specificity",
@@ -379,9 +353,7 @@ function scoreSpecificity(content: string, details: ScoreDetail[]): number {
     hasConstraints,
     hasConstraints ? 15 : 0,
     15,
-    hasConstraints
-      ? undefined
-      : 'Add "Do NOT" or "Avoid" constraints to prevent common mistakes',
+    hasConstraints ? undefined : 'Add "Do NOT" or "Avoid" constraints to prevent common mistakes',
   );
   if (hasConstraints) score += 15;
 
@@ -412,8 +384,7 @@ async function scoreAdvanced(
   if (hasScripts) score += 25;
 
   // Check 2: Has references/ or resources/ directory (20 pts)
-  const hasRefs =
-    existsSync(join(dir, "references")) || existsSync(join(dir, "resources"));
+  const hasRefs = existsSync(join(dir, "references")) || existsSync(join(dir, "resources"));
   addDetail(
     details,
     "advanced",
@@ -421,16 +392,12 @@ async function scoreAdvanced(
     hasRefs,
     hasRefs ? 20 : 0,
     20,
-    hasRefs
-      ? undefined
-      : "Add a references/ directory for supporting documentation",
+    hasRefs ? undefined : "Add a references/ directory for supporting documentation",
   );
   if (hasRefs) score += 20;
 
   // Check 3: Has anti-patterns section (20 pts)
-  const hasAntiPatterns = /anti.?pattern|common\s+mistake|pitfall|gotcha/i.test(
-    content,
-  );
+  const hasAntiPatterns = /anti.?pattern|common\s+mistake|pitfall|gotcha/i.test(content);
   addDetail(
     details,
     "advanced",
@@ -504,7 +471,7 @@ function toGrade(score: number): string {
 /**
  * Format a quality score as a colored bar string (for terminal output).
  */
-export function formatScoreBar(score: number, width: number = 20): string {
+export function formatScoreBar(score: number, width = 20): string {
   const filled = Math.round((score / 100) * width);
   const empty = width - filled;
   const bar = "█".repeat(filled) + "░".repeat(empty);

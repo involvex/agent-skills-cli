@@ -1,7 +1,9 @@
 /**
  * Shared agent configuration used across CLI commands.
  */
-import { homedir } from "os";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import type { ComponentType } from "../types/index.js";
 
 const home = homedir();
 
@@ -10,6 +12,15 @@ export interface AgentConfig {
   displayName: string;
   projectDir: string;
   globalDir: string;
+  /** Directory for agent configurations (optional) */
+  agentsDir?: string;
+  agentsGlobalDir?: string;
+  /** Directory for MCP server configurations (optional) */
+  mcpDir?: string;
+  mcpGlobalDir?: string;
+  /** Directory for hooks (optional) */
+  hooksDir?: string;
+  hooksGlobalDir?: string;
 }
 
 export const AGENTS: Record<string, AgentConfig> = {
@@ -18,18 +29,36 @@ export const AGENTS: Record<string, AgentConfig> = {
     displayName: "Cursor",
     projectDir: ".cursor/skills",
     globalDir: `${home}/.cursor/skills`,
+    agentsDir: ".cursor/agents",
+    agentsGlobalDir: `${home}/.cursor/agents`,
+    mcpDir: ".cursor/mcp",
+    mcpGlobalDir: `${home}/.cursor/mcp`,
+    hooksDir: ".cursor/hooks",
+    hooksGlobalDir: `${home}/.cursor/hooks`,
   },
   claude: {
     name: "claude",
     displayName: "Claude Code",
     projectDir: ".claude/skills",
     globalDir: `${home}/.claude/skills`,
+    agentsDir: ".claude/agents",
+    agentsGlobalDir: `${home}/.claude/agents`,
+    mcpDir: ".claude/mcp",
+    mcpGlobalDir: `${home}/.claude/mcp`,
+    hooksDir: ".claude/hooks",
+    hooksGlobalDir: `${home}/.claude/hooks`,
   },
   copilot: {
     name: "copilot",
     displayName: "GitHub Copilot",
     projectDir: ".github/skills",
     globalDir: `${home}/.github/skills`,
+    agentsDir: ".github/agents",
+    agentsGlobalDir: `${home}/.github/agents`,
+    mcpDir: ".github/mcp",
+    mcpGlobalDir: `${home}/.github/mcp`,
+    hooksDir: ".github/hooks",
+    hooksGlobalDir: `${home}/.github/hooks`,
   },
   codex: {
     name: "codex",
@@ -280,9 +309,9 @@ export function getInstallPath(agent: string, global: boolean): string {
 // ── Adapter Factory ────────────────────────────────────────────────────
 
 import type { AgentAdapter } from "../adapters/adapter.js";
-import { CursorAdapter } from "../adapters/cursor.js";
 import { ClaudeAdapter } from "../adapters/claude.js";
 import { CopilotAdapter } from "../adapters/copilot.js";
+import { CursorAdapter } from "../adapters/cursor.js";
 import { UniversalAdapter } from "../adapters/universal.js";
 
 /** Cache for adapters (lazy singleton per agent) */
@@ -333,6 +362,36 @@ export function getAdapter(agentName: string): AgentAdapter {
 
   adapterCache.set(agentName, adapter);
   return adapter;
+}
+
+/**
+ * Get the component path for a specific agent and component type
+ * Falls back to standard paths if not explicitly configured
+ */
+export function getAgentComponentPath(
+  agentName: string,
+  componentType: ComponentType,
+  global: boolean,
+): string {
+  const config = AGENTS[agentName];
+  if (!config) {
+    const base = global ? `${home}/.${agentName}` : `.${agentName}`;
+    return join(base, `${componentType}s`);
+  }
+
+  // Map component type to config key
+  const dirKey = global
+    ? (`${componentType}GlobalDir` as keyof AgentConfig)
+    : (`${componentType}Dir` as keyof AgentConfig);
+
+  const explicitPath = config[dirKey];
+  if (explicitPath && typeof explicitPath === "string") {
+    return explicitPath;
+  }
+
+  // Fallback to standard pattern
+  const basePath = global ? config.globalDir : config.projectDir;
+  return join(dirname(basePath), `${componentType}s`);
 }
 
 /**

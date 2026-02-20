@@ -4,8 +4,8 @@
  */
 
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
 import { listInstalledSkills } from "../../core/skill-lock.js";
 
 export function registerInsightCommand(program: Command): void {
@@ -52,11 +52,7 @@ async function insightCommand(options: {
 
   if (options.json) {
     console.log(
-      JSON.stringify(
-        { total: installed.length, unique: names.size, byAgent, bySource },
-        null,
-        2,
-      ),
+      JSON.stringify({ total: installed.length, unique: names.size, byAgent, bySource }, null, 2),
     );
     return;
   }
@@ -66,9 +62,7 @@ async function insightCommand(options: {
   console.log("");
   console.log(chalk.bold("Agent Coverage:"));
   for (const [agent, count] of Object.entries(byAgent)) {
-    console.log(
-      `  ${agent.padEnd(15)} ${chalk.green("█".repeat(Math.min(count, 20)))} ${count}`,
-    );
+    console.log(`  ${agent.padEnd(15)} ${chalk.green("█".repeat(Math.min(count, 20)))} ${count}`);
   }
   console.log("");
   console.log(chalk.bold("Source Types:"));

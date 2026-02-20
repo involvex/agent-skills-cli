@@ -9,12 +9,12 @@
  * - Interactive token prompt (fallback)
  */
 
-import { exec } from "child_process";
-import { promisify } from "util";
-import { existsSync } from "fs";
-import { readFile } from "fs/promises";
-import { join } from "path";
-import { homedir } from "os";
+import { exec } from "node:child_process";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
 
@@ -53,8 +53,7 @@ export function detectGitHost(url: string): GitHost {
   const lower = url.toLowerCase();
   if (lower.includes("github.com") || lower.includes("github")) return "github";
   if (lower.includes("gitlab.com") || lower.includes("gitlab")) return "gitlab";
-  if (lower.includes("bitbucket.org") || lower.includes("bitbucket"))
-    return "bitbucket";
+  if (lower.includes("bitbucket.org") || lower.includes("bitbucket")) return "bitbucket";
   return "custom";
 }
 
@@ -77,7 +76,7 @@ function resolveTokenFromEnv(host: GitHost): string | undefined {
   const vars = HOST_ENV_VARS[host];
   for (const envVar of vars) {
     const value = process.env[envVar];
-    if (value && value.trim()) {
+    if (value?.trim()) {
       return value.trim();
     }
   }
@@ -106,9 +105,7 @@ async function checkSshAvailable(): Promise<boolean> {
 /**
  * Try to resolve a token from Git credential helper
  */
-async function resolveFromCredentialHelper(
-  hostname: string,
-): Promise<string | undefined> {
+async function resolveFromCredentialHelper(hostname: string): Promise<string | undefined> {
   try {
     // Check if a credential helper is configured
     const { stdout: helper } = await execAsync("git config credential.helper", {
@@ -142,10 +139,7 @@ async function resolveFromCredentialHelper(
  * Try to resolve credentials from .netrc file
  */
 async function resolveFromNetrc(hostname: string): Promise<string | undefined> {
-  const netrcPath = join(
-    homedir(),
-    process.platform === "win32" ? "_netrc" : ".netrc",
-  );
+  const netrcPath = join(homedir(), process.platform === "win32" ? "_netrc" : ".netrc");
   if (!existsSync(netrcPath)) return undefined;
 
   try {
@@ -196,10 +190,7 @@ function extractHostname(url: string): string {
  * 4. .netrc file
  * 5. None (public repo or will fail)
  */
-export async function resolveGitAuth(
-  url: string,
-  explicitToken?: string,
-): Promise<GitAuthResult> {
+export async function resolveGitAuth(url: string, explicitToken?: string): Promise<GitAuthResult> {
   const host = detectGitHost(url);
   const hostname = extractHostname(url);
 
@@ -314,17 +305,12 @@ export async function cloneWithAuth(
   // Build the clone URL
   let cloneUrl: string;
 
-  if (
-    auth.method === "ssh" ||
-    (auth.method === "none" && url.startsWith("git@"))
-  ) {
+  if (auth.method === "ssh" || (auth.method === "none" && url.startsWith("git@"))) {
     // Use SSH URL directly
     cloneUrl = url;
   } else if (auth.token) {
     // Convert SSH to HTTPS if needed, then inject token
-    const httpsUrl = url.startsWith("git@")
-      ? sshToHttps(url)
-      : normalizeGitUrl(url);
+    const httpsUrl = url.startsWith("git@") ? sshToHttps(url) : normalizeGitUrl(url);
     cloneUrl = buildAuthenticatedUrl(httpsUrl, auth.token);
   } else {
     // No auth — try public access
@@ -361,9 +347,7 @@ export async function cloneWithAuth(
       const host = detectGitHost(url);
       const envVars = HOST_ENV_VARS[host].join(" or ");
       throw new Error(
-        `Authentication failed for ${url}\n` +
-          `Set ${envVars} environment variable, or use --token flag.\n` +
-          `For SSH, ensure your key is added: ssh-add ~/.ssh/id_ed25519`,
+        `Authentication failed for ${url}\nSet ${envVars} environment variable, or use --token flag.\nFor SSH, ensure your key is added: ssh-add ~/.ssh/id_ed25519`,
       );
     }
 

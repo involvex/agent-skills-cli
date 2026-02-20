@@ -3,11 +3,10 @@
  * Methodology packs — apply development methodologies as skills
  */
 
+import { mkdir, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
+import type { Command } from "commander";
 
 interface MethodPack {
   name: string;

@@ -3,15 +3,11 @@
  * Assess skill quality with a 4-dimension scoring system
  */
 
+import { resolve } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { resolve } from "path";
-import {
-  assessQuality,
-  formatScoreBar,
-  getScoreColor,
-} from "../../core/quality.js";
-import type { QualityScore, ScoreDetail } from "../../core/quality.js";
+import type { Command } from "commander";
+import { assessQuality, formatScoreBar, getScoreColor } from "../../core/quality.js";
+import type { QualityScore } from "../../core/quality.js";
 
 interface ScoreOptions {
   json?: boolean;
@@ -24,9 +20,7 @@ interface ScoreOptions {
 export function registerScoreCommand(program: Command): void {
   program
     .command("score [path]")
-    .description(
-      "Score a skill's quality (structure, clarity, specificity, advanced)",
-    )
+    .description("Score a skill's quality (structure, clarity, specificity, advanced)")
     .option("--json", "Output as JSON")
     .option("-v, --verbose", "Show individual check details")
     .action(async (path: string | undefined, options: ScoreOptions) => {
@@ -42,10 +36,7 @@ export function registerScoreCommand(program: Command): void {
 /**
  * Run the score command
  */
-async function scoreCommand(
-  targetPath: string,
-  options: ScoreOptions,
-): Promise<void> {
+async function scoreCommand(targetPath: string, options: ScoreOptions): Promise<void> {
   const resolved = resolve(targetPath);
   const result = await assessQuality(resolved);
 
@@ -71,10 +62,7 @@ async function scoreCommand(
   // Dimension breakdown
   const dims: {
     name: string;
-    key: keyof Pick<
-      QualityScore,
-      "structure" | "clarity" | "specificity" | "advanced"
-    >;
+    key: keyof Pick<QualityScore, "structure" | "clarity" | "specificity" | "advanced">;
     weight: string;
   }[] = [
     { name: "Structure", key: "structure", weight: "30%" },
@@ -87,9 +75,7 @@ async function scoreCommand(
     const s = result[dim.key];
     const c = getScoreColor(s);
     const bar = formatScoreBar(s, 15);
-    console.log(
-      `   ${chalk.dim(dim.weight.padEnd(4))} ${dim.name.padEnd(12)} ${chalk[c](bar)}`,
-    );
+    console.log(`   ${chalk.dim(dim.weight.padEnd(4))} ${dim.name.padEnd(12)} ${chalk[c](bar)}`);
 
     // Verbose: show checks for this dimension
     if (options.verbose) {
@@ -99,7 +85,7 @@ async function scoreCommand(
         const pts = chalk.dim(`${check.points}/${check.maxPoints}`);
         console.log(`         ${icon} ${check.check} ${pts}`);
         if (!check.passed && check.tip) {
-          console.log(`           ${chalk.dim("→ " + check.tip)}`);
+          console.log(`           ${chalk.dim(`→ ${check.tip}`)}`);
         }
       }
       console.log("");
@@ -116,9 +102,7 @@ async function scoreCommand(
   if (failedChecks.length > 0 && !options.verbose) {
     console.log("");
     console.log(chalk.bold("💡 Top improvements:"));
-    const topTips = failedChecks
-      .sort((a, b) => b.maxPoints - a.maxPoints)
-      .slice(0, 3);
+    const topTips = failedChecks.sort((a, b) => b.maxPoints - a.maxPoints).slice(0, 3);
     for (const tip of topTips) {
       console.log(`   ${chalk.yellow("→")} ${tip.tip}`);
     }

@@ -3,9 +3,9 @@
  * Compare two skills side-by-side with section-aware diffing.
  */
 
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-import { join, basename } from "path";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import matter from "gray-matter";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -50,10 +50,7 @@ export interface DiffResult {
  * @param pathA — path to first skill directory or SKILL.md
  * @param pathB — path to second skill directory or SKILL.md
  */
-export async function diffSkills(
-  pathA: string,
-  pathB: string,
-): Promise<DiffResult> {
+export async function diffSkills(pathA: string, pathB: string): Promise<DiffResult> {
   const skillA = await loadSkillForDiff(pathA);
   const skillB = await loadSkillForDiff(pathB);
 

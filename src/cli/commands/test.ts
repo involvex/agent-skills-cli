@@ -1,9 +1,9 @@
+import chalk from "chalk";
 /**
  * Test Command
  * Run assertions and quality checks against installed skills.
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
 
 export function registerTestCommand(program: Command) {
@@ -15,17 +15,16 @@ export function registerTestCommand(program: Command) {
     .option("-v, --verbose", "Show all assertions (not just failures)")
     .action(async (skills: string[], options: any) => {
       try {
-        const { existsSync } = await import("fs");
-        const { readdir } = await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
-        const { testSkill, testSkills } =
-          await import("../../core/skill-tester.js");
+        const { existsSync } = await import("node:fs");
+        const { readdir } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
+        const { testSkill, testSkills } = await import("../../core/skill-tester.js");
 
         const home = homedir();
         const skillsDir = join(home, ".antigravity", "skills");
 
-        let skillPaths: string[] = [];
+        const skillPaths: string[] = [];
 
         if (options.all) {
           // Test all installed skills
@@ -73,9 +72,7 @@ export function registerTestCommand(program: Command) {
           }
           if (skillPaths.length === 0) {
             console.log(
-              chalk.yellow(
-                "\n  No skills specified. Use --all or provide skill names.\n",
-              ),
+              chalk.yellow("\n  No skills specified. Use --all or provide skill names.\n"),
             );
             return;
           }
@@ -95,7 +92,7 @@ export function registerTestCommand(program: Command) {
           return;
         }
 
-        console.log(chalk.bold(`\n🧪 Skill Test Results\n`));
+        console.log(chalk.bold("\n🧪 Skill Test Results\n"));
 
         let totalPassed = 0;
         let totalFailed = 0;
@@ -116,9 +113,7 @@ export function registerTestCommand(program: Command) {
           if (options.verbose || !result.passed) {
             for (const assertion of result.assertions) {
               if (options.verbose || !assertion.passed) {
-                const aIcon = assertion.passed
-                  ? chalk.green("  ✓")
-                  : chalk.red("  ✗");
+                const aIcon = assertion.passed ? chalk.green("  ✓") : chalk.red("  ✗");
                 const msg = assertion.passed
                   ? chalk.gray(assertion.name)
                   : `${chalk.red(assertion.name)}: ${chalk.gray(assertion.message || "")}`;

@@ -1,11 +1,11 @@
+import chalk from "chalk";
 /**
  * `skills export` command — Export skills to different AI agent formats
  *
  * Follows the Agent Skills spec: .agentname/skills/skillname/SKILL.md
  * Supports all 42+ agents defined in agents.ts
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
 import { discoverSkills, loadSkill } from "../../core/index.js";
 import { AGENTS, getAdapter } from "../agents.js";
@@ -27,9 +27,9 @@ export function registerExportCommand(program: Command) {
     .option("--list-agents", "List all available agent targets")
     .action(async (options) => {
       try {
-        const { mkdir, writeFile, cp } = await import("fs/promises");
-        const { join } = await import("path");
-        const { existsSync } = await import("fs");
+        const { mkdir, writeFile, cp } = await import("node:fs/promises");
+        const { join } = await import("node:path");
+        const { existsSync } = await import("node:fs");
 
         // --list-agents: show all available targets
         if (options.listAgents) {
@@ -40,7 +40,7 @@ export function registerExportCommand(program: Command) {
             );
           }
           console.log(chalk.dim(`\n  Total: ${agentNames.length} agents`));
-          console.log(chalk.dim(`  Use: skills export -t <agent-name>\n`));
+          console.log(chalk.dim("  Use: skills export -t <agent-name>\n"));
           return;
         }
 
@@ -72,9 +72,7 @@ export function registerExportCommand(program: Command) {
             if (!AGENTS[t]) {
               console.error(chalk.red(`Unknown agent: ${t}`));
               console.log(
-                chalk.dim(
-                  `Run 'skills export --list-agents' to see all available agents`,
-                ),
+                chalk.dim(`Run 'skills export --list-agents' to see all available agents`),
               );
               process.exit(1);
             }
@@ -82,9 +80,7 @@ export function registerExportCommand(program: Command) {
         }
 
         console.log(
-          chalk.bold(
-            `\nExporting ${skills.length} skill(s) to ${targets.length} agent(s)...\n`,
-          ),
+          chalk.bold(`\nExporting ${skills.length} skill(s) to ${targets.length} agent(s)...\n`),
         );
 
         let successCount = 0;
@@ -114,10 +110,7 @@ export function registerExportCommand(program: Command) {
                   description: skill.metadata.description,
                 },
               });
-              await writeFile(
-                join(skillDir, adapter.getSkillFilename()),
-                content,
-              );
+              await writeFile(join(skillDir, adapter.getSkillFilename()), content);
 
               // Copy optional directories (scripts/, references/, assets/) if they exist
               const optionalDirs = ["scripts", "references", "assets"];
@@ -141,9 +134,7 @@ export function registerExportCommand(program: Command) {
         }
 
         console.log(
-          chalk.bold.green(
-            `\n✨ Export complete! (${successCount}/${targets.length} agents)\n`,
-          ),
+          chalk.bold.green(`\n✨ Export complete! (${successCount}/${targets.length} agents)\n`),
         );
       } catch (error) {
         console.error(chalk.red("Error exporting skills:"), error);

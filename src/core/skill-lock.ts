@@ -3,10 +3,10 @@
  * Tracks installed skills for check/update/remove operations
  */
 
-import { homedir } from "os";
-import { join, dirname } from "path";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 
 /**
  * Lock file location (always in home, tracks both global and project skills)
@@ -114,9 +114,7 @@ export async function removeSkillFromLock(skillName: string): Promise<void> {
 /**
  * Get a skill entry from the lock file
  */
-export async function getSkillFromLock(
-  skillName: string,
-): Promise<LockEntry | null> {
+export async function getSkillFromLock(skillName: string): Promise<LockEntry | null> {
   const lock = await readLock();
   return lock.skills[skillName] || null;
 }
@@ -136,9 +134,7 @@ export interface ListOptions {
 /**
  * List all installed skills, optionally filtered
  */
-export async function listInstalledSkills(
-  options?: ListOptions,
-): Promise<LockEntry[]> {
+export async function listInstalledSkills(options?: ListOptions): Promise<LockEntry[]> {
   const lock = await readLock();
   let skills = Object.values(lock.skills);
 
@@ -176,10 +172,7 @@ export async function getInstalledSkillCount(): Promise<number> {
 /**
  * Update a skill's version in the lock file
  */
-export async function updateSkillVersion(
-  skillName: string,
-  version: string,
-): Promise<void> {
+export async function updateSkillVersion(skillName: string, version: string): Promise<void> {
   const lock = await readLock();
   if (lock.skills[skillName]) {
     lock.skills[skillName].version = version;
@@ -191,10 +184,7 @@ export async function updateSkillVersion(
 /**
  * Update agents for an installed skill
  */
-export async function updateSkillAgents(
-  skillName: string,
-  agents: string[],
-): Promise<void> {
+export async function updateSkillAgents(skillName: string, agents: string[]): Promise<void> {
   const lock = await readLock();
   if (lock.skills[skillName]) {
     lock.skills[skillName].agents = agents;

@@ -1,9 +1,9 @@
+import chalk from "chalk";
 /**
  * Skill Benchmarking Command
  * Compare skill effectiveness with metrics and quality scores.
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
 
 export function registerBenchCommand(program: Command) {
@@ -11,38 +11,31 @@ export function registerBenchCommand(program: Command) {
     .command("bench [skills...]")
     .description("Benchmark and compare skills by quality, size, and coverage")
     .option("-a, --all", "Benchmark all installed skills")
-    .option(
-      "--sort <field>",
-      "Sort by: quality, tokens, name (default: quality)",
-      "quality",
-    )
+    .option("--sort <field>", "Sort by: quality, tokens, name (default: quality)", "quality")
     .option("--json", "Output as JSON")
     .option(
       "--min-quality <score>",
       "Filter skills below this quality score (0-100)",
-      parseInt,
+      Number.parseInt,
     )
     .action(async (skills: string[], options: any) => {
       try {
-        const { existsSync } = await import("fs");
-        const { readdir, readFile } = await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join, basename } = await import("path");
+        const { existsSync } = await import("node:fs");
+        const { readdir, readFile } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join, basename } = await import("node:path");
         const matter = (await import("gray-matter")).default;
 
         const home = homedir();
         const skillsDir = join(home, ".antigravity", "skills");
 
-        let skillPaths: string[] = [];
+        const skillPaths: string[] = [];
 
         if (options.all) {
           if (existsSync(skillsDir)) {
             const entries = await readdir(skillsDir, { withFileTypes: true });
             for (const entry of entries) {
-              if (
-                entry.isDirectory() &&
-                existsSync(join(skillsDir, entry.name, "SKILL.md"))
-              ) {
+              if (entry.isDirectory() && existsSync(join(skillsDir, entry.name, "SKILL.md"))) {
                 skillPaths.push(join(skillsDir, entry.name));
               }
             }
@@ -50,16 +43,11 @@ export function registerBenchCommand(program: Command) {
         } else if (skills.length > 0) {
           for (const s of skills) {
             if (existsSync(s)) skillPaths.push(s);
-            else if (existsSync(join(skillsDir, s)))
-              skillPaths.push(join(skillsDir, s));
+            else if (existsSync(join(skillsDir, s))) skillPaths.push(join(skillsDir, s));
             else console.error(chalk.red(`  ✗ Skill not found: ${s}`));
           }
         } else {
-          console.log(
-            chalk.yellow(
-              "\n  No skills specified. Use --all or provide skill names.\n",
-            ),
-          );
+          console.log(chalk.yellow("\n  No skills specified. Use --all or provide skill names.\n"));
           return;
         }
 
@@ -68,9 +56,7 @@ export function registerBenchCommand(program: Command) {
           return;
         }
 
-        const spinner = ora(
-          `Benchmarking ${skillPaths.length} skill(s)...`,
-        ).start();
+        const spinner = ora(`Benchmarking ${skillPaths.length} skill(s)...`).start();
 
         // Benchmark each skill
         interface BenchResult {
@@ -135,9 +121,7 @@ export function registerBenchCommand(program: Command) {
         spinner.stop();
 
         if (options.minQuality) {
-          const filtered = results.filter(
-            (r) => r.quality >= options.minQuality,
-          );
+          const filtered = results.filter((r) => r.quality >= options.minQuality);
           if (filtered.length < results.length) {
             console.log(
               chalk.gray(
@@ -166,23 +150,18 @@ export function registerBenchCommand(program: Command) {
           return;
         }
 
-        console.log(chalk.bold(`\n📈 Skill Benchmark Results\n`));
+        console.log(chalk.bold("\n📈 Skill Benchmark Results\n"));
 
         // Table header
         const header = `  ${"Skill".padEnd(25)} ${"Quality".padEnd(10)} ${"Tokens".padEnd(8)} ${"Sections".padEnd(10)} ${"Code".padEnd(6)} ${"Features"}`;
         console.log(chalk.bold(header));
-        console.log(chalk.gray("  " + "─".repeat(85)));
+        console.log(chalk.gray(`  ${"─".repeat(85)}`));
 
         for (const r of results) {
           const qualityColor =
-            r.quality >= 80
-              ? chalk.green
-              : r.quality >= 60
-                ? chalk.yellow
-                : chalk.red;
+            r.quality >= 80 ? chalk.green : r.quality >= 60 ? chalk.yellow : chalk.red;
           const qualityBar = qualityColor(
-            "█".repeat(Math.round(r.quality / 10)) +
-              "░".repeat(10 - Math.round(r.quality / 10)),
+            "█".repeat(Math.round(r.quality / 10)) + "░".repeat(10 - Math.round(r.quality / 10)),
           );
 
           const features: string[] = [];
@@ -197,14 +176,12 @@ export function registerBenchCommand(program: Command) {
 
         console.log("");
         console.log(chalk.bold("  Summary:"));
-        const avgQuality = Math.round(
-          results.reduce((s, r) => s + r.quality, 0) / results.length,
-        );
+        const avgQuality = Math.round(results.reduce((s, r) => s + r.quality, 0) / results.length);
         const totalTokens = results.reduce((s, r) => s + r.tokens, 0);
         console.log(`    Skills:      ${results.length}`);
         console.log(`    Avg quality: ${avgQuality}%`);
         console.log(`    Total tokens: ${totalTokens}`);
-        console.log(`    Legend: 📝 frontmatter  💡 examples  📋 instructions`);
+        console.log("    Legend: 📝 frontmatter  💡 examples  📋 instructions");
         console.log("");
       } catch (error: any) {
         console.error(chalk.red("Error:"), error.message || error);

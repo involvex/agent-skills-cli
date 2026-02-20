@@ -1,10 +1,10 @@
+import chalk from "chalk";
 /**
  * Utility commands — doctor, check, update, exec
  */
-import { Command } from "commander";
-import chalk from "chalk";
-import ora from "ora";
+import type { Command } from "commander";
 import inquirer from "inquirer";
+import ora from "ora";
 import { AGENTS } from "../agents.js";
 
 export function registerDoctorCommand(program: Command) {
@@ -15,12 +15,12 @@ export function registerDoctorCommand(program: Command) {
     .option("-d, --deep", "Run deep conflict detection across installed skills")
     .action(async (options) => {
       try {
-        const { existsSync } = await import("fs");
-        const { mkdir, readdir } = await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
-        const { exec } = await import("child_process");
-        const { promisify } = await import("util");
+        const { existsSync } = await import("node:fs");
+        const { mkdir, readdir } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
+        const { exec } = await import("node:child_process");
+        const { promisify } = await import("node:util");
         const execAsync = promisify(exec);
 
         console.log(chalk.bold("\n🩺 Agent Skills Doctor\n"));
@@ -35,7 +35,7 @@ export function registerDoctorCommand(program: Command) {
 
         // Check 1: Node version
         const nodeVersion = process.version;
-        const major = parseInt(nodeVersion.slice(1));
+        const major = Number.parseInt(nodeVersion.slice(1));
         if (major >= 18) {
           checks.push({
             name: "Node.js version",
@@ -70,7 +70,7 @@ export function registerDoctorCommand(program: Command) {
         }
 
         // Check 3: Agent directories
-        for (const [key, config] of Object.entries(AGENTS).slice(0, 5)) {
+        for (const [_key, config] of Object.entries(AGENTS).slice(0, 5)) {
           if (existsSync(config.globalDir)) {
             checks.push({
               name: `${config.displayName} dir`,
@@ -184,62 +184,37 @@ export function registerDoctorCommand(program: Command) {
           console.log(chalk.bold("\n🔍 Deep Conflict Analysis\n"));
 
           if (skillDirs.length < 2) {
-            console.log(
-              chalk.gray(
-                "  Need at least 2 installed skills to detect conflicts.\n",
-              ),
-            );
+            console.log(chalk.gray("  Need at least 2 installed skills to detect conflicts.\n"));
           } else {
             const spinner = ora("Analyzing skills for conflicts...").start();
             try {
-              const { detectConflicts } =
-                await import("../../core/conflict-detector.js");
+              const { detectConflicts } = await import("../../core/conflict-detector.js");
               const result = await detectConflicts(skillDirs);
               spinner.stop();
 
               // Show conflicts
               if (result.conflicts.length > 0) {
-                console.log(
-                  chalk.red(
-                    `  Found ${result.conflicts.length} conflict(s):\n`,
-                  ),
-                );
+                console.log(chalk.red(`  Found ${result.conflicts.length} conflict(s):\n`));
                 for (const conflict of result.conflicts) {
                   const icon =
-                    conflict.severity === "critical"
-                      ? chalk.red("✗")
-                      : chalk.yellow("⚠");
+                    conflict.severity === "critical" ? chalk.red("✗") : chalk.yellow("⚠");
                   console.log(
                     `  ${icon} ${chalk.bold(conflict.category.toUpperCase())}: ${conflict.description}`,
                   );
-                  console.log(
-                    `    ${chalk.cyan(conflict.skillA)}: ${chalk.gray(conflict.lineA)}`,
-                  );
-                  console.log(
-                    `    ${chalk.cyan(conflict.skillB)}: ${chalk.gray(conflict.lineB)}`,
-                  );
+                  console.log(`    ${chalk.cyan(conflict.skillA)}: ${chalk.gray(conflict.lineA)}`);
+                  console.log(`    ${chalk.cyan(conflict.skillB)}: ${chalk.gray(conflict.lineB)}`);
                   console.log("");
                 }
               } else {
-                console.log(
-                  chalk.green("  ✓ No conflicting instructions found.\n"),
-                );
+                console.log(chalk.green("  ✓ No conflicting instructions found.\n"));
               }
 
               // Show overlaps
               if (result.overlaps.length > 0) {
-                console.log(
-                  chalk.yellow(
-                    `  Found ${result.overlaps.length} topic overlap(s):\n`,
-                  ),
-                );
+                console.log(chalk.yellow(`  Found ${result.overlaps.length} topic overlap(s):\n`));
                 for (const overlap of result.overlaps) {
-                  console.log(
-                    `  ${chalk.yellow("⚠")} ${chalk.bold(overlap.topic)}`,
-                  );
-                  console.log(
-                    `    Skills: ${overlap.skills.map((s) => chalk.cyan(s)).join(", ")}`,
-                  );
+                  console.log(`  ${chalk.yellow("⚠")} ${chalk.bold(overlap.topic)}`);
+                  console.log(`    Skills: ${overlap.skills.map((s) => chalk.cyan(s)).join(", ")}`);
                   console.log(
                     `    Est. wasted tokens: ${chalk.yellow(String(overlap.tokenWaste))}`,
                   );
@@ -254,13 +229,9 @@ export function registerDoctorCommand(program: Command) {
               if (summary.total > 0) {
                 console.log(chalk.bold("  Summary:"));
                 if (summary.critical > 0)
-                  console.log(
-                    `    ${chalk.red("✗")} ${summary.critical} critical conflict(s)`,
-                  );
+                  console.log(`    ${chalk.red("✗")} ${summary.critical} critical conflict(s)`);
                 if (summary.warnings > 0)
-                  console.log(
-                    `    ${chalk.yellow("⚠")} ${summary.warnings} warning(s)`,
-                  );
+                  console.log(`    ${chalk.yellow("⚠")} ${summary.warnings} warning(s)`);
                 if (summary.overlapCount > 0)
                   console.log(
                     `    ${chalk.yellow("⚠")} ${summary.overlapCount} overlap(s) (~${summary.estimatedTokenWaste} wasted tokens)`,
@@ -282,7 +253,7 @@ export function registerDoctorCommand(program: Command) {
               try {
                 await check.fix();
                 console.log(chalk.green(`  ✓ Fixed: ${check.name}`));
-              } catch (err) {
+              } catch (_err) {
                 console.log(chalk.red(`  ✗ Could not fix: ${check.name}`));
               }
             }
@@ -292,16 +263,12 @@ export function registerDoctorCommand(program: Command) {
         if (!hasIssues && !options.deep) {
           console.log(chalk.green("\n✓ All checks passed!\n"));
         } else if (!options.fix && !options.deep) {
-          console.log(
-            chalk.gray("\nRun with --fix to attempt automatic fixes.\n"),
-          );
+          console.log(chalk.gray("\nRun with --fix to attempt automatic fixes.\n"));
         }
 
         if (!options.deep) {
           console.log(
-            chalk.gray(
-              "  Tip: Run with --deep to detect skill conflicts and overlaps.\n",
-            ),
+            chalk.gray("  Tip: Run with --deep to detect skill conflicts and overlaps.\n"),
           );
         }
         console.log("");
@@ -321,8 +288,7 @@ export function registerCheckCommand(program: Command) {
     .option("--json", "Output as JSON")
     .action(async (options) => {
       try {
-        const { listInstalledSkills, readLock } =
-          await import("../../core/index.js");
+        const { listInstalledSkills, readLock } = await import("../../core/index.js");
 
         const spinner = ora("Checking installed skills...").start();
 
@@ -343,25 +309,17 @@ export function registerCheckCommand(program: Command) {
         spinner.stop();
 
         if (options.json) {
-          console.log(
-            JSON.stringify({ skills, count: skills.length }, null, 2),
-          );
+          console.log(JSON.stringify({ skills, count: skills.length }, null, 2));
           return;
         }
 
         if (skills.length === 0) {
           console.log(chalk.yellow("\n📦 No skills installed."));
-          console.log(
-            chalk.gray(
-              "Use `skills search` or `skills install` to add skills.\n",
-            ),
-          );
+          console.log(chalk.gray("Use `skills search` or `skills install` to add skills.\n"));
           return;
         }
 
-        console.log(
-          chalk.bold(`\n📦 Found ${skills.length} installed skill(s):\n`),
-        );
+        console.log(chalk.bold(`\n📦 Found ${skills.length} installed skill(s):\n`));
 
         for (const skill of skills) {
           const sourceLabel =
@@ -373,29 +331,19 @@ export function registerCheckCommand(program: Command) {
                   ? "🦊 GitLab"
                   : "📁 Local";
 
-          console.log(
-            `  ${chalk.cyan(skill.scopedName)} ${chalk.gray(`[${sourceLabel}]`)}`,
-          );
+          console.log(`  ${chalk.cyan(skill.scopedName)} ${chalk.gray(`[${sourceLabel}]`)}`);
           console.log(chalk.gray(`    Agents: ${skill.agents.join(", ")}`));
           console.log(
-            chalk.gray(
-              `    Installed: ${new Date(skill.installedAt).toLocaleDateString()}`,
-            ),
+            chalk.gray(`    Installed: ${new Date(skill.installedAt).toLocaleDateString()}`),
           );
           if (skill.version) {
-            console.log(
-              chalk.gray(`    Version: ${skill.version.slice(0, 7)}`),
-            );
+            console.log(chalk.gray(`    Version: ${skill.version.slice(0, 7)}`));
           }
           console.log("");
         }
 
-        console.log(
-          chalk.gray("Tip: Run `skills update` to update all skills."),
-        );
-        console.log(
-          chalk.gray("     Run `skills remove` to uninstall skills.\n"),
-        );
+        console.log(chalk.gray("Tip: Run `skills update` to update all skills."));
+        console.log(chalk.gray("     Run `skills remove` to uninstall skills.\n"));
       } catch (error) {
         console.error(chalk.red("Error checking installed skills:"), error);
         process.exit(1);
@@ -412,18 +360,15 @@ export function registerUpdateCommand(program: Command) {
     .option("-y, --yes", "Skip confirmation prompts")
     .action(async (skillNames, options) => {
       try {
-        const {
-          readLock,
-          removeSkillFromLock,
-          addSkillToLock,
-          createLockEntry,
-        } = await import("../../core/index.js");
-        const { mkdir, cp, rm } = await import("fs/promises");
-        const { existsSync } = await import("fs");
-        const { join } = await import("path");
-        const { tmpdir } = await import("os");
-        const { exec } = await import("child_process");
-        const { promisify } = await import("util");
+        const { readLock, removeSkillFromLock, addSkillToLock, createLockEntry } = await import(
+          "../../core/index.js"
+        );
+        const { mkdir, cp, rm } = await import("node:fs/promises");
+        const { existsSync } = await import("node:fs");
+        const { join } = await import("node:path");
+        const { tmpdir } = await import("node:os");
+        const { exec } = await import("node:child_process");
+        const { promisify } = await import("node:util");
         const execAsync = promisify(exec);
 
         const lock = await readLock();
@@ -446,11 +391,7 @@ export function registerUpdateCommand(program: Command) {
         }
 
         // If not --all and no specific skills, prompt for selection
-        if (
-          !options.all &&
-          skillNames.length === 0 &&
-          skillsToUpdate.length > 0
-        ) {
+        if (!options.all && skillNames.length === 0 && skillsToUpdate.length > 0) {
           const { selected } = await inquirer.prompt([
             {
               type: "checkbox",
@@ -468,31 +409,23 @@ export function registerUpdateCommand(program: Command) {
 
         if (skillsToUpdate.length === 0) {
           console.log(chalk.yellow("\n📦 No skills to update."));
-          console.log(
-            chalk.gray("Use `skills install` to add skills first.\n"),
-          );
+          console.log(chalk.gray("Use `skills install` to add skills first.\n"));
           return;
         }
 
         // Filter to only updateable skills (github/gitlab)
         const updateable = skillsToUpdate.filter(
           (s) =>
-            s.sourceType === "github" ||
-            s.sourceType === "gitlab" ||
-            s.sourceType === "database",
+            s.sourceType === "github" || s.sourceType === "gitlab" || s.sourceType === "database",
         );
 
         if (updateable.length === 0) {
           console.log(chalk.yellow("\n📦 No remote skills to update."));
-          console.log(
-            chalk.gray("Local skills cannot be updated automatically.\n"),
-          );
+          console.log(chalk.gray("Local skills cannot be updated automatically.\n"));
           return;
         }
 
-        console.log(
-          chalk.bold(`\n📦 Updating ${updateable.length} skill(s)...\n`),
-        );
+        console.log(chalk.bold(`\n📦 Updating ${updateable.length} skill(s)...\n`));
 
         let successCount = 0;
         let failCount = 0;
@@ -506,9 +439,7 @@ export function registerUpdateCommand(program: Command) {
             await mkdir(tempDir, { recursive: true });
 
             // Parse GitHub/GitLab URL
-            const urlMatch = skill.source.match(
-              /(github|gitlab)\.com\/([^/]+)\/([^/]+)/,
-            );
+            const urlMatch = skill.source.match(/(github|gitlab)\.com\/([^/]+)\/([^/]+)/);
             if (!urlMatch) {
               spinner.fail(`${skill.scopedName}: Invalid source URL`);
               failCount++;
@@ -525,16 +456,10 @@ export function registerUpdateCommand(program: Command) {
               const agentConfig = AGENTS[agent];
               if (!agentConfig) continue;
 
-              const targetDir = skill.isGlobal
-                ? agentConfig.globalDir
-                : agentConfig.projectDir;
+              const targetDir = skill.isGlobal ? agentConfig.globalDir : agentConfig.projectDir;
               const skillDir = skill.isGlobal
                 ? join(targetDir, skill.name)
-                : join(
-                    skill.projectDir || process.cwd(),
-                    targetDir,
-                    skill.name,
-                  );
+                : join(skill.projectDir || process.cwd(), targetDir, skill.name);
 
               // Remove old version
               if (existsSync(skillDir)) {
@@ -603,11 +528,10 @@ export function registerExecCommand(program: Command) {
     .option("-a, --args <args...>", "Arguments to pass to the script")
     .action(async (skillName, scriptName, options) => {
       try {
-        const { executeScript, listScripts } =
-          await import("../../core/executor.js");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
-        const { existsSync } = await import("fs");
+        const { executeScript, listScripts } = await import("../../core/executor.js");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
+        const { existsSync } = await import("node:fs");
 
         // Find the skill path
         const skillsDir = join(homedir(), ".antigravity", "skills");
@@ -638,11 +562,7 @@ export function registerExecCommand(program: Command) {
         // Execute the script
         const spinner = ora(`Executing ${scriptName}...`).start();
         try {
-          const result = await executeScript(
-            skillPath,
-            scriptName,
-            options.args || [],
-          );
+          const result = await executeScript(skillPath, scriptName, options.args || []);
           spinner.stop();
 
           if (result.stdout) {

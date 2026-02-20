@@ -8,9 +8,9 @@
  *   3. Rule Extraction       — Do/Don't lists with conflicting directives
  */
 
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-import { join, basename } from "path";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import matter from "gray-matter";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ const OPPOSING_VERBS: Array<[Directive["verb"], Directive["verb"]]> = [
 ];
 
 /** Code fence language regex */
-const CODE_FENCE_RE = /```(\w+)/g;
+const _CODE_FENCE_RE = /```(\w+)/g;
 
 /** Common stop words to ignore in topic matching */
 const STOP_WORDS = new Set([
@@ -207,9 +207,7 @@ const STOP_WORDS = new Set([
  * @param skillPaths — array of absolute paths to skill directories
  *                     (each should contain a SKILL.md)
  */
-export async function detectConflicts(
-  skillPaths: string[],
-): Promise<ConflictResult> {
+export async function detectConflicts(skillPaths: string[]): Promise<ConflictResult> {
   // 1. Load all skills
   const skills: SkillContent[] = [];
   for (const p of skillPaths) {
@@ -224,10 +222,7 @@ export async function detectConflicts(
   // 3. Build summary
   const critical = conflicts.filter((c) => c.severity === "critical").length;
   const warnings = conflicts.filter((c) => c.severity === "warning").length;
-  const estimatedTokenWaste = overlaps.reduce(
-    (sum, o) => sum + o.tokenWaste,
-    0,
-  );
+  const estimatedTokenWaste = overlaps.reduce((sum, o) => sum + o.tokenWaste, 0);
 
   return {
     conflicts,
@@ -286,8 +281,7 @@ function checkOpposition(
 ): { confidence: number; category: string; description: string } | null {
   // Check if verbs are opposing
   const isOpposing = OPPOSING_VERBS.some(
-    ([v1, v2]) =>
-      (a.verb === v1 && b.verb === v2) || (a.verb === v2 && b.verb === v1),
+    ([v1, v2]) => (a.verb === v1 && b.verb === v2) || (a.verb === v2 && b.verb === v1),
   );
 
   if (!isOpposing) return null;
@@ -297,7 +291,7 @@ function checkOpposition(
   if (similarity < 0.4) return null;
 
   // Determine category from subject keywords
-  const category = categorizeSubject(a.subject + " " + b.subject);
+  const category = categorizeSubject(`${a.subject} ${b.subject}`);
 
   return {
     confidence: similarity,
@@ -349,14 +343,10 @@ function detectOverlaps(skills: SkillContent[]): Overlap[] {
       // Check keyword overlap
       const keywordOverlap = arrayOverlap(a.topics.keywords, b.topics.keywords);
       // Check language overlap
-      const langOverlap = arrayOverlap(
-        a.topics.codeLanguages,
-        b.topics.codeLanguages,
-      );
+      const langOverlap = arrayOverlap(a.topics.codeLanguages, b.topics.codeLanguages);
 
       // Weighted score
-      const score =
-        headingOverlap * 0.5 + keywordOverlap * 0.35 + langOverlap * 0.15;
+      const score = headingOverlap * 0.5 + keywordOverlap * 0.35 + langOverlap * 0.15;
 
       if (score > 0.35) {
         seen.add(key);
@@ -367,12 +357,8 @@ function detectOverlaps(skills: SkillContent[]): Overlap[] {
         const waste = Math.round(Math.min(tokensA, tokensB) * score);
 
         // Find the common topic
-        const commonHeadings = a.topics.headings.filter((h) =>
-          b.topics.headings.includes(h),
-        );
-        const commonKeywords = a.topics.keywords.filter((k) =>
-          b.topics.keywords.includes(k),
-        );
+        const commonHeadings = a.topics.headings.filter((h) => b.topics.headings.includes(h));
+        const commonKeywords = a.topics.keywords.filter((k) => b.topics.keywords.includes(k));
         const topic =
           commonHeadings.length > 0
             ? commonHeadings.slice(0, 3).join(", ")
@@ -395,12 +381,8 @@ function detectOverlaps(skills: SkillContent[]): Overlap[] {
 /**
  * Load a skill's content and extract directives + topics.
  */
-async function loadSkillContent(
-  skillPath: string,
-): Promise<SkillContent | null> {
-  const skillMd = skillPath.endsWith("SKILL.md")
-    ? skillPath
-    : join(skillPath, "SKILL.md");
+async function loadSkillContent(skillPath: string): Promise<SkillContent | null> {
+  const skillMd = skillPath.endsWith("SKILL.md") ? skillPath : join(skillPath, "SKILL.md");
 
   if (!existsSync(skillMd)) return null;
 
@@ -427,8 +409,7 @@ function extractDirectives(body: string): Directive[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("```"))
-      continue;
+    if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("```")) continue;
 
     for (const { regex, verb } of DIRECTIVE_PATTERNS) {
       const match = trimmed.match(regex);
@@ -464,7 +445,7 @@ function extractTopics(body: string): TopicBag {
       // Extract language from opening fence
       if (inCodeBlock) {
         const match = line.match(/```(\w+)/);
-        if (match && match[1]) {
+        if (match?.[1]) {
           codeLanguages.push(match[1].toLowerCase());
         }
       }
@@ -538,17 +519,7 @@ function categorizeSubject(text: string): string {
   const categories: Array<[string, string[]]> = [
     [
       "formatting",
-      [
-        "format",
-        "indent",
-        "tab",
-        "space",
-        "semicolon",
-        "quote",
-        "lint",
-        "prettier",
-        "eslint",
-      ],
+      ["format", "indent", "tab", "space", "semicolon", "quote", "lint", "prettier", "eslint"],
     ],
     [
       "architecture",
@@ -563,56 +534,14 @@ function categorizeSubject(text: string): string {
         "structure",
       ],
     ],
-    [
-      "testing",
-      ["test", "spec", "jest", "vitest", "mocha", "assert", "mock", "stub"],
-    ],
-    [
-      "styling",
-      ["css", "style", "tailwind", "sass", "scss", "styled", "theme", "color"],
-    ],
-    [
-      "state management",
-      ["state", "redux", "zustand", "context", "store", "signal", "observable"],
-    ],
-    [
-      "dependencies",
-      ["import", "require", "dependency", "package", "library", "framework"],
-    ],
-    [
-      "language",
-      [
-        "typescript",
-        "javascript",
-        "python",
-        "rust",
-        "go",
-        "java",
-        "type",
-        "interface",
-      ],
-    ],
-    [
-      "security",
-      ["auth", "token", "password", "secret", "encrypt", "cors", "xss", "csrf"],
-    ],
-    [
-      "deployment",
-      ["deploy", "build", "ci", "cd", "docker", "kubernetes", "vercel", "aws"],
-    ],
-    [
-      "api",
-      [
-        "api",
-        "rest",
-        "graphql",
-        "endpoint",
-        "route",
-        "fetch",
-        "request",
-        "response",
-      ],
-    ],
+    ["testing", ["test", "spec", "jest", "vitest", "mocha", "assert", "mock", "stub"]],
+    ["styling", ["css", "style", "tailwind", "sass", "scss", "styled", "theme", "color"]],
+    ["state management", ["state", "redux", "zustand", "context", "store", "signal", "observable"]],
+    ["dependencies", ["import", "require", "dependency", "package", "library", "framework"]],
+    ["language", ["typescript", "javascript", "python", "rust", "go", "java", "type", "interface"]],
+    ["security", ["auth", "token", "password", "secret", "encrypt", "cors", "xss", "csrf"]],
+    ["deployment", ["deploy", "build", "ci", "cd", "docker", "kubernetes", "vercel", "aws"]],
+    ["api", ["api", "rest", "graphql", "endpoint", "route", "fetch", "request", "response"]],
   ];
 
   for (const [category, keywords] of categories) {

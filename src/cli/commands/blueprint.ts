@@ -4,11 +4,11 @@
  * (SkillKit calls this "plan" — we call it "blueprint")
  */
 
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
+import type { Command } from "commander";
 
 interface BlueprintTask {
   id: string;
@@ -36,10 +36,7 @@ const BLUEPRINT_FILE = ".skills-blueprint.json";
  * Register the blueprint command
  */
 export function registerBlueprintCommand(program: Command): void {
-  const bp = program
-    .command("blueprint")
-    .alias("bp")
-    .description("Structured development plans");
+  const bp = program.command("blueprint").alias("bp").description("Structured development plans");
 
   bp.command("create <name>")
     .description("Create a new blueprint")
@@ -142,9 +139,7 @@ async function bpCreate(name: string, description?: string): Promise<void> {
 async function bpAddMilestone(milestone: string): Promise<void> {
   const bp = await loadBlueprint();
   if (!bp) {
-    console.error(
-      chalk.red("No blueprint. Run: skills blueprint create <name>"),
-    );
+    console.error(chalk.red("No blueprint. Run: skills blueprint create <name>"));
     process.exit(1);
   }
   bp.milestones.push({ name: milestone, tasks: [] });
@@ -152,19 +147,13 @@ async function bpAddMilestone(milestone: string): Promise<void> {
   console.log(chalk.green(`✓ Added milestone: ${chalk.cyan(milestone)}`));
 }
 
-async function bpAddTask(
-  milestone: string,
-  task: string,
-  assignee?: string,
-): Promise<void> {
+async function bpAddTask(milestone: string, task: string, assignee?: string): Promise<void> {
   const bp = await loadBlueprint();
   if (!bp) {
     console.error(chalk.red("No blueprint found"));
     process.exit(1);
   }
-  const ms = bp.milestones.find(
-    (m) => m.name.toLowerCase() === milestone.toLowerCase(),
-  );
+  const ms = bp.milestones.find((m) => m.name.toLowerCase() === milestone.toLowerCase());
   if (!ms) {
     console.error(chalk.red(`Milestone "${milestone}" not found`));
     process.exit(1);
@@ -174,18 +163,14 @@ async function bpAddTask(
   ms.tasks.push({ id, title: task, status: "pending", assignee });
   await saveBlueprint(bp);
   console.log(
-    chalk.green(
-      `✓ Added task ${chalk.dim(`[${id}]`)} to ${chalk.cyan(milestone)}: ${task}`,
-    ),
+    chalk.green(`✓ Added task ${chalk.dim(`[${id}]`)} to ${chalk.cyan(milestone)}: ${task}`),
   );
 }
 
 async function bpStatus(): Promise<void> {
   const bp = await loadBlueprint();
   if (!bp) {
-    console.log(
-      chalk.dim("No blueprint. Create one: skills blueprint create <name>"),
-    );
+    console.log(chalk.dim("No blueprint. Create one: skills blueprint create <name>"));
     return;
   }
 
@@ -194,8 +179,7 @@ async function bpStatus(): Promise<void> {
     (a, m) => a + m.tasks.filter((t) => t.status === "done").length,
     0,
   );
-  const progress =
-    totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   console.log("");
   console.log(chalk.bold(`📋 ${bp.name}`));
@@ -205,9 +189,7 @@ async function bpStatus(): Promise<void> {
 
   for (const ms of bp.milestones) {
     const msDone = ms.tasks.filter((t) => t.status === "done").length;
-    console.log(
-      `  ${chalk.bold(ms.name)} ${chalk.dim(`(${msDone}/${ms.tasks.length})`)}`,
-    );
+    console.log(`  ${chalk.bold(ms.name)} ${chalk.dim(`(${msDone}/${ms.tasks.length})`)}`);
     for (const t of ms.tasks) {
       const icon =
         t.status === "done"
@@ -216,9 +198,7 @@ async function bpStatus(): Promise<void> {
             ? chalk.yellow("◐")
             : chalk.dim("○");
       const assignee = t.assignee ? chalk.dim(` @${t.assignee}`) : "";
-      console.log(
-        `    ${icon} ${chalk.dim(`[${t.id}]`)} ${t.title}${assignee}`,
-      );
+      console.log(`    ${icon} ${chalk.dim(`[${t.id}]`)} ${t.title}${assignee}`);
     }
     console.log("");
   }

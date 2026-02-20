@@ -3,17 +3,12 @@
  * Handles discovery and loading of skills from the filesystem
  */
 
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { glob } from "glob";
 import matter from "gray-matter";
-import { readFile } from "fs/promises";
-import { dirname, join, basename } from "path";
-import { existsSync } from "fs";
-import type {
-  Skill,
-  SkillRef,
-  SkillMetadata,
-  SkillDiscoveryConfig,
-} from "../types/index.js";
+import type { Skill, SkillDiscoveryConfig, SkillMetadata, SkillRef } from "../types/index.js";
 
 /**
  * Default search paths for skills
@@ -56,7 +51,7 @@ export async function discoverSkills(
               path: dirname(skillMdPath),
             });
           }
-        } catch (err) {
+        } catch (_err) {
           // Skip invalid skills silently during discovery
           console.warn(`Warning: Could not load skill at ${skillMdPath}`);
         }
@@ -72,9 +67,7 @@ export async function discoverSkills(
 /**
  * Load only skill metadata from SKILL.md (Level 1 loading)
  */
-export async function loadSkillMetadata(
-  skillMdPath: string,
-): Promise<SkillMetadata | null> {
+export async function loadSkillMetadata(skillMdPath: string): Promise<SkillMetadata | null> {
   if (!existsSync(skillMdPath)) {
     return null;
   }
@@ -84,9 +77,7 @@ export async function loadSkillMetadata(
 
   // Validate required fields
   if (!data.name || !data.description) {
-    throw new Error(
-      `Invalid skill: missing required fields (name, description)`,
-    );
+    throw new Error("Invalid skill: missing required fields (name, description)");
   }
 
   return {
@@ -103,9 +94,7 @@ export async function loadSkillMetadata(
  * Load full skill including body content (Level 2 loading)
  */
 export async function loadSkill(skillPath: string): Promise<Skill | null> {
-  const skillMdPath = skillPath.endsWith("SKILL.md")
-    ? skillPath
-    : join(skillPath, "SKILL.md");
+  const skillMdPath = skillPath.endsWith("SKILL.md") ? skillPath : join(skillPath, "SKILL.md");
 
   if (!existsSync(skillMdPath)) {
     return null;

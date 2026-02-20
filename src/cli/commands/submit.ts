@@ -4,18 +4,14 @@
  * (SkillKit calls this "publish submit" — we call it "submit")
  */
 
+import { existsSync } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { readFile, stat } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join, basename } from "path";
-import { loadSkill, validateMetadata, validateBody } from "../../core/index.js";
-import {
-  assessQuality,
-  formatScoreBar,
-  getScoreColor,
-} from "../../core/quality.js";
+import { loadSkill, validateBody, validateMetadata } from "../../core/index.js";
+import { assessQuality, formatScoreBar, getScoreColor } from "../../core/quality.js";
 
 export interface SubmitOptions {
   dryRun?: boolean;
@@ -32,10 +28,7 @@ export function registerSubmitCommand(program: Command): void {
   program
     .command("submit [path]")
     .description("Submit a skill to the Agent Skills marketplace")
-    .option(
-      "-n, --dry-run",
-      "Preview what would be submitted without uploading",
-    )
+    .option("-n, --dry-run", "Preview what would be submitted without uploading")
     .option("--name <name>", "Custom skill name (overrides SKILL.md name)")
     .action(async (path: string | undefined, options: SubmitOptions) => {
       try {
@@ -50,10 +43,7 @@ export function registerSubmitCommand(program: Command): void {
 /**
  * Run the submit command
  */
-async function submitCommand(
-  targetPath: string,
-  options: SubmitOptions,
-): Promise<void> {
+async function submitCommand(targetPath: string, options: SubmitOptions): Promise<void> {
   const resolvedPath = resolve(targetPath);
 
   // Step 1: Find and validate SKILL.md
@@ -71,9 +61,7 @@ async function submitCommand(
   if (!existsSync(skillMdPath)) {
     spinner.fail("No SKILL.md found");
     console.log(chalk.dim(`  Looked in: ${skillMdPath}`));
-    console.log(
-      chalk.dim(`  Create one with: ${chalk.white("skills craft <name>")}`),
-    );
+    console.log(chalk.dim(`  Create one with: ${chalk.white("skills craft <name>")}`));
     process.exit(1);
   }
 
@@ -82,9 +70,7 @@ async function submitCommand(
 
   let skill;
   try {
-    skill = await loadSkill(
-      pathStat.isDirectory() ? resolvedPath : resolve(resolvedPath, ".."),
-    );
+    skill = await loadSkill(pathStat.isDirectory() ? resolvedPath : resolve(resolvedPath, ".."));
   } catch (err: any) {
     spinner.fail(`Failed to load skill: ${err.message}`);
     process.exit(1);
@@ -137,8 +123,7 @@ async function submitCommand(
   console.log("");
 
   // Step 2: Extract metadata
-  const skillName =
-    options.name || skill.metadata?.name || basename(resolvedPath);
+  const skillName = options.name || skill.metadata?.name || basename(resolvedPath);
   const description = skill.metadata?.description || "";
   const tags: string[] = (skill.metadata?.metadata as any)?.tags || [];
   const version = (skill.metadata?.metadata as any)?.version || "1.0.0";
@@ -146,16 +131,12 @@ async function submitCommand(
   // Display submission preview
   console.log(chalk.bold("📦 Submission Preview:"));
   console.log(`  ${chalk.dim("Name:")}         ${chalk.cyan(skillName)}`);
-  console.log(
-    `  ${chalk.dim("Description:")}  ${description || chalk.yellow("(none)")}`,
-  );
+  console.log(`  ${chalk.dim("Description:")}  ${description || chalk.yellow("(none)")}`);
   console.log(`  ${chalk.dim("Version:")}      ${version}`);
   console.log(
     `  ${chalk.dim("Tags:")}         ${tags.length > 0 ? tags.join(", ") : chalk.yellow("(none)")}`,
   );
-  console.log(
-    `  ${chalk.dim("Content:")}      ${skillContent.split("\n").length} lines`,
-  );
+  console.log(`  ${chalk.dim("Content:")}      ${skillContent.split("\n").length} lines`);
   console.log("");
 
   if (options.dryRun) {
@@ -189,20 +170,14 @@ async function submitCommand(
       if (data?.url) {
         console.log(chalk.dim(`  View at: ${chalk.white(data.url)}`));
       }
-      console.log(chalk.dim(`  Status: Pending review`));
+      console.log(chalk.dim("  Status: Pending review"));
     } else {
       const errorText = await response.text();
       submitSpinner.fail("Submission failed");
-      console.log(
-        chalk.red(`  Server responded: ${response.status} ${errorText}`),
-      );
+      console.log(chalk.red(`  Server responded: ${response.status} ${errorText}`));
       console.log("");
       console.log(chalk.dim("If this persists, submit via GitHub:"));
-      console.log(
-        chalk.dim(
-          "  https://github.com/Karanjot786/agent-skills-cli/issues/new",
-        ),
-      );
+      console.log(chalk.dim("  https://github.com/Karanjot786/agent-skills-cli/issues/new"));
     }
   } catch (err: any) {
     submitSpinner.fail("Could not reach marketplace API");
@@ -210,9 +185,7 @@ async function submitCommand(
     console.log("");
     console.log(chalk.dim("Alternative: Submit via GitHub issue:"));
     console.log(
-      chalk.dim(
-        `  ${chalk.white("https://github.com/Karanjot786/agent-skills-cli/issues/new")}`,
-      ),
+      chalk.dim(`  ${chalk.white("https://github.com/Karanjot786/agent-skills-cli/issues/new")}`),
     );
   }
 

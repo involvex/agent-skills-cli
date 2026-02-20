@@ -3,17 +3,17 @@
  * Fetches and installs skills from GitHub-based marketplaces
  */
 
-import { mkdir, writeFile, readFile, rm, cp } from "fs/promises";
-import { existsSync } from "fs";
-import { join, basename } from "path";
-import { tmpdir } from "os";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { exec } from "node:child_process";
+import { existsSync } from "node:fs";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import type {
-  MarketplaceSource,
-  MarketplaceSkill,
   InstalledSkill,
   MarketplaceConfig,
+  MarketplaceSkill,
+  MarketplaceSource,
 } from "../types/marketplace.js";
 import { DEFAULT_MARKETPLACES } from "../types/marketplace.js";
 import { loadSkillMetadata } from "./loader.js";
@@ -53,9 +53,7 @@ export async function loadConfig(): Promise<MarketplaceConfig> {
 
     // Remove deprecated/broken sources
     const deprecatedIds = ["agentskills-examples"];
-    config.sources = config.sources.filter(
-      (s) => !deprecatedIds.includes(s.id),
-    );
+    config.sources = config.sources.filter((s) => !deprecatedIds.includes(s.id));
 
     return config;
   } catch {
@@ -113,13 +111,9 @@ export async function removeMarketplace(id: string): Promise<void> {
 /**
  * List available skills from a marketplace
  */
-export async function listMarketplaceSkills(
-  sourceId?: string,
-): Promise<MarketplaceSkill[]> {
+export async function listMarketplaceSkills(sourceId?: string): Promise<MarketplaceSkill[]> {
   const config = await loadConfig();
-  const sources = sourceId
-    ? config.sources.filter((s) => s.id === sourceId)
-    : config.sources;
+  const sources = sourceId ? config.sources.filter((s) => s.id === sourceId) : config.sources;
 
   const skills: MarketplaceSkill[] = [];
 
@@ -136,18 +130,13 @@ export async function listMarketplaceSkills(
 }
 
 // In-memory cache for marketplace skills (5 minute TTL)
-const skillsCache: Map<
-  string,
-  { skills: MarketplaceSkill[]; timestamp: number }
-> = new Map();
+const skillsCache: Map<string, { skills: MarketplaceSkill[]; timestamp: number }> = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Fetch skills from a GitHub marketplace source (with caching and parallel fetching)
  */
-async function fetchSkillsFromSource(
-  source: MarketplaceSource,
-): Promise<MarketplaceSkill[]> {
+async function fetchSkillsFromSource(source: MarketplaceSource): Promise<MarketplaceSkill[]> {
   const cacheKey = `${source.owner}/${source.repo}`;
   const cached = skillsCache.get(cacheKey);
 
@@ -261,9 +250,7 @@ async function fetchSkillsFromSource(
     // Cache the results
     skillsCache.set(cacheKey, { skills, timestamp: Date.now() });
   } catch (error) {
-    throw new Error(
-      `Failed to fetch from ${source.owner}/${source.repo}: ${error}`,
-    );
+    throw new Error(`Failed to fetch from ${source.owner}/${source.repo}: ${error}`);
   }
 
   return skills;
@@ -281,7 +268,7 @@ function parseSkillMdFrontmatter(content: string): Record<string, any> | null {
     const yaml = frontmatterMatch[1];
     const result: Record<string, any> = {};
 
-    let currentKey = "";
+    let _currentKey = "";
     let inMetadata = false;
     const metadataObj: Record<string, string> = {};
 
@@ -300,7 +287,7 @@ function parseSkillMdFrontmatter(content: string): Record<string, any> | null {
         }
       } else if (trimmed.startsWith("metadata:")) {
         inMetadata = true;
-        currentKey = "metadata";
+        _currentKey = "metadata";
       } else {
         inMetadata = false;
         const colonIndex = trimmed.indexOf(":");
@@ -311,7 +298,7 @@ function parseSkillMdFrontmatter(content: string): Record<string, any> | null {
             .trim()
             .replace(/^["']|["']$/g, "");
           result[key] = value;
-          currentKey = key;
+          _currentKey = key;
         }
       }
     }
@@ -329,10 +316,7 @@ function parseSkillMdFrontmatter(content: string): Record<string, any> | null {
 /**
  * Install a skill from a marketplace
  */
-export async function installSkill(
-  skillName: string,
-  sourceId?: string,
-): Promise<InstalledSkill> {
+export async function installSkill(skillName: string, sourceId?: string): Promise<InstalledSkill> {
   const config = await loadConfig();
 
   // Find the skill in available marketplaces
@@ -346,9 +330,7 @@ export async function installSkill(
   // Check if already installed
   const existing = config.installed.find((i) => i.name === skillName);
   if (existing) {
-    throw new Error(
-      `Skill ${skillName} is already installed at ${existing.localPath}`,
-    );
+    throw new Error(`Skill ${skillName} is already installed at ${existing.localPath}`);
   }
 
   // Create installation directory
@@ -390,10 +372,7 @@ export async function installSkill(
 /**
  * Download a skill from GitHub
  */
-async function downloadSkill(
-  skill: MarketplaceSkill,
-  destPath: string,
-): Promise<void> {
+async function downloadSkill(skill: MarketplaceSkill, destPath: string): Promise<void> {
   const source = skill.source;
   const branch = source.branch || "main";
 
@@ -406,13 +385,13 @@ async function downloadSkill(
     const repoUrl = `https://github.com/${source.owner}/${source.repo}.git`;
 
     // Initialize sparse checkout
-    await execAsync(`git init`, { cwd: tempDir });
+    await execAsync("git init", { cwd: tempDir });
     await execAsync(`git remote add origin ${repoUrl}`, { cwd: tempDir });
-    await execAsync(`git config core.sparseCheckout true`, { cwd: tempDir });
+    await execAsync("git config core.sparseCheckout true", { cwd: tempDir });
 
     // Set sparse checkout path
     const sparseFile = join(tempDir, ".git", "info", "sparse-checkout");
-    await writeFile(sparseFile, skill.path + "\n");
+    await writeFile(sparseFile, `${skill.path}\n`);
 
     // Fetch and checkout
     await execAsync(`git fetch --depth=1 origin ${branch}`, { cwd: tempDir });
@@ -480,8 +459,7 @@ export async function checkUpdates(): Promise<
       const remote = skills.find((s) => s.name === installed.name);
 
       if (remote) {
-        const hasUpdate =
-          remote.version !== installed.version && !!remote.version;
+        const hasUpdate = remote.version !== installed.version && !!remote.version;
         updates.push({
           skill: installed,
           currentVersion: installed.version,

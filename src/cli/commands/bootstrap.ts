@@ -4,12 +4,12 @@
  * (SkillKit calls this "primer" — we call it "bootstrap")
  */
 
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { writeFile, readFile, readdir, stat } from "fs/promises";
-import { existsSync } from "fs";
-import { join, resolve, basename } from "path";
 import { analyzeProject } from "../../core/suggest.js";
 
 interface BootstrapOptions {
@@ -75,11 +75,7 @@ export function registerBootstrapCommand(program: Command): void {
     .command("bootstrap")
     .alias("bs")
     .description("Auto-generate agent instruction files from your project")
-    .option(
-      "-a, --agents <agents>",
-      "Comma-separated agent names (default: all)",
-      "all",
-    )
+    .option("-a, --agents <agents>", "Comma-separated agent names (default: all)", "all")
     .option("-o, --output <dir>", "Output directory", ".")
     .option("--overwrite", "Overwrite existing files")
     .action(async (options: BootstrapOptions) => {
@@ -104,9 +100,7 @@ async function bootstrapCommand(options: BootstrapOptions): Promise<void> {
   console.log("");
   console.log(chalk.bold("📊 Project: ") + chalk.cyan(ctx.name));
   console.log(
-    chalk.dim(
-      `  Stack: ${[...ctx.frameworks, ...ctx.languages].join(", ") || "unknown"}`,
-    ),
+    chalk.dim(`  Stack: ${[...ctx.frameworks, ...ctx.languages].join(", ") || "unknown"}`),
   );
   console.log("");
 
@@ -114,7 +108,8 @@ async function bootstrapCommand(options: BootstrapOptions): Promise<void> {
   const agentNames =
     options.agents === "all"
       ? Object.keys(AGENT_TEMPLATES)
-      : options.agents!.split(",").map((s) => s.trim().toLowerCase());
+      : (options.agents?.split(",").map((s) => s.trim().toLowerCase()) ??
+        Object.keys(AGENT_TEMPLATES));
 
   let generated = 0;
   let skipped = 0;
@@ -141,21 +136,17 @@ async function bootstrapCommand(options: BootstrapOptions): Promise<void> {
     const content = template.generator(ctx);
 
     // Ensure directory exists
-    const { mkdir } = await import("fs/promises");
+    const { mkdir } = await import("node:fs/promises");
     await mkdir(dirPath, { recursive: true });
 
     await writeFile(filePath, content);
-    console.log(
-      `  ${chalk.green("✓")} ${chalk.cyan(join(template.dir, template.file))}`,
-    );
+    console.log(`  ${chalk.green("✓")} ${chalk.cyan(join(template.dir, template.file))}`);
     generated++;
   }
 
   console.log("");
   if (generated > 0) {
-    console.log(
-      chalk.green(`✨ Generated ${generated} agent instruction file(s)`),
-    );
+    console.log(chalk.green(`✨ Generated ${generated} agent instruction file(s)`));
   }
   if (skipped > 0) {
     console.log(chalk.dim(`   Skipped ${skipped} existing file(s)`));
@@ -163,10 +154,7 @@ async function bootstrapCommand(options: BootstrapOptions): Promise<void> {
   console.log("");
 }
 
-async function buildProjectContext(
-  projectDir: string,
-  analysis: any,
-): Promise<ProjectContext> {
+async function buildProjectContext(projectDir: string, analysis: any): Promise<ProjectContext> {
   const ctx: ProjectContext = {
     name: basename(projectDir),
     languages: analysis.languages || [],
@@ -211,16 +199,11 @@ function generateCursorRules(ctx: ProjectContext): string {
   lines.push(`# Project: ${ctx.name}`);
   lines.push("");
   lines.push("## Tech Stack");
-  if (ctx.languages.length)
-    lines.push(`- Languages: ${ctx.languages.join(", ")}`);
-  if (ctx.frameworks.length)
-    lines.push(`- Frameworks: ${ctx.frameworks.join(", ")}`);
-  if (ctx.libraries.length)
-    lines.push(`- Libraries: ${ctx.libraries.join(", ")}`);
-  if (ctx.testTools.length)
-    lines.push(`- Testing: ${ctx.testTools.join(", ")}`);
-  if (ctx.buildTools.length)
-    lines.push(`- Build: ${ctx.buildTools.join(", ")}`);
+  if (ctx.languages.length) lines.push(`- Languages: ${ctx.languages.join(", ")}`);
+  if (ctx.frameworks.length) lines.push(`- Frameworks: ${ctx.frameworks.join(", ")}`);
+  if (ctx.libraries.length) lines.push(`- Libraries: ${ctx.libraries.join(", ")}`);
+  if (ctx.testTools.length) lines.push(`- Testing: ${ctx.testTools.join(", ")}`);
+  if (ctx.buildTools.length) lines.push(`- Build: ${ctx.buildTools.join(", ")}`);
   lines.push("");
   lines.push("## Conventions");
   lines.push("- Follow existing code patterns and naming conventions");
@@ -251,9 +234,7 @@ function generateClaudeMd(ctx: ProjectContext): string {
   lines.push(`# ${ctx.name}`);
   lines.push("");
   lines.push("## Project Overview");
-  lines.push(
-    `This is a ${ctx.frameworks.join("/") || ctx.languages.join("/")} project.`,
-  );
+  lines.push(`This is a ${ctx.frameworks.join("/") || ctx.languages.join("/")} project.`);
   lines.push("");
   lines.push("## Development Guidelines");
   lines.push("");
@@ -267,7 +248,7 @@ function generateClaudeMd(ctx: ProjectContext): string {
   if (ctx.testTools.length > 0) {
     lines.push("### Testing");
     lines.push(`- Use ${ctx.testTools.join(", ")} for testing`);
-    if (ctx.scripts["test"]) lines.push(`- Run tests: \`npm test\``);
+    if (ctx.scripts.test) lines.push("- Run tests: `npm test`");
     lines.push("");
   }
   if (Object.keys(ctx.scripts).length > 0) {
@@ -285,9 +266,7 @@ function generateCopilotInstructions(ctx: ProjectContext): string {
   lines.push(`# Copilot Instructions for ${ctx.name}`);
   lines.push("");
   lines.push("## Context");
-  lines.push(
-    `This project uses ${[...ctx.frameworks, ...ctx.languages].join(", ")}.`,
-  );
+  lines.push(`This project uses ${[...ctx.frameworks, ...ctx.languages].join(", ")}.`);
   lines.push("");
   lines.push("## Code Style");
   lines.push("- Follow existing patterns in the codebase");
@@ -318,12 +297,9 @@ function generateProjectSkill(ctx: ProjectContext): string {
   lines.push(`# ${ctx.name} Conventions`);
   lines.push("");
   lines.push("## Tech Stack");
-  if (ctx.frameworks.length)
-    lines.push(`- **Frameworks**: ${ctx.frameworks.join(", ")}`);
-  if (ctx.libraries.length)
-    lines.push(`- **Libraries**: ${ctx.libraries.join(", ")}`);
-  if (ctx.testTools.length)
-    lines.push(`- **Testing**: ${ctx.testTools.join(", ")}`);
+  if (ctx.frameworks.length) lines.push(`- **Frameworks**: ${ctx.frameworks.join(", ")}`);
+  if (ctx.libraries.length) lines.push(`- **Libraries**: ${ctx.libraries.join(", ")}`);
+  if (ctx.testTools.length) lines.push(`- **Testing**: ${ctx.testTools.join(", ")}`);
   lines.push("");
   lines.push("## Guidelines");
   lines.push("- Follow existing code patterns");

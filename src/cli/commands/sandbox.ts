@@ -1,29 +1,25 @@
+import chalk from "chalk";
 /**
  * Sandbox Preview Command
  * Preview a skill's effects before installation: score, conflicts, token impact.
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
 
 export function registerSandboxCommand(program: Command) {
   program
     .command("sandbox <source>")
-    .description(
-      "Preview a skill before installing — score, conflicts, and token impact",
-    )
+    .description("Preview a skill before installing — score, conflicts, and token impact")
     .option("-f, --format <format>", "Output format: text, json", "text")
-    .action(async (source: string, options: any) => {
+    .action(async (source: string, _options: any) => {
       try {
-        const { existsSync } = await import("fs");
-        const { readdir, readFile, mkdtemp, rm } = await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join, basename } = await import("path");
-        const { tmpdir } = await import("os");
+        const { existsSync } = await import("node:fs");
+        const { readdir, readFile, mkdtemp, rm } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join, basename } = await import("node:path");
+        const { tmpdir } = await import("node:os");
 
-        console.log(
-          chalk.bold(`\n🧪 Sandbox Preview: ${chalk.cyan(source)}\n`),
-        );
+        console.log(chalk.bold(`\n🧪 Sandbox Preview: ${chalk.cyan(source)}\n`));
 
         let skillPath = "";
         let tempDir = "";
@@ -36,8 +32,8 @@ export function registerSandboxCommand(program: Command) {
           // Try to clone from GitHub
           const spinner = ora("Fetching skill from remote...").start();
           try {
-            const { exec } = await import("child_process");
-            const { promisify } = await import("util");
+            const { exec } = await import("node:child_process");
+            const { promisify } = await import("node:util");
             const execAsync = promisify(exec);
 
             tempDir = await mkdtemp(join(tmpdir(), "skills-sandbox-"));
@@ -58,10 +54,7 @@ export function registerSandboxCommand(program: Command) {
             } else {
               const entries = await readdir(tempDir, { withFileTypes: true });
               for (const entry of entries) {
-                if (
-                  entry.isDirectory() &&
-                  existsSync(join(tempDir, entry.name, "SKILL.md"))
-                ) {
+                if (entry.isDirectory() && existsSync(join(tempDir, entry.name, "SKILL.md"))) {
                   skillPath = join(tempDir, entry.name);
                   break;
                 }
@@ -71,18 +64,14 @@ export function registerSandboxCommand(program: Command) {
           } catch (err: any) {
             spinner.fail("Could not fetch skill");
             console.error(chalk.red(`  ${err.message || err}`));
-            if (tempDir)
-              await rm(tempDir, { recursive: true, force: true }).catch(
-                () => {},
-              );
+            if (tempDir) await rm(tempDir, { recursive: true, force: true }).catch(() => {});
             return;
           }
         }
 
         if (!skillPath || !existsSync(join(skillPath, "SKILL.md"))) {
           console.error(chalk.red("  No SKILL.md found.\n"));
-          if (isTemp)
-            await rm(tempDir, { recursive: true, force: true }).catch(() => {});
+          if (isTemp) await rm(tempDir, { recursive: true, force: true }).catch(() => {});
           return;
         }
 
@@ -98,8 +87,7 @@ export function registerSandboxCommand(program: Command) {
         const name = frontmatter.name || basename(skillPath);
         const tokens = Math.ceil(raw.length / 4);
         const lines = raw.split("\n").length;
-        const description =
-          frontmatter.description || chalk.gray("(no description)");
+        const description = frontmatter.description || chalk.gray("(no description)");
 
         // 1. Basic info
         console.log(chalk.bold("  📋 Skill Info"));
@@ -133,11 +121,9 @@ export function registerSandboxCommand(program: Command) {
           // Show failed checks
           const failures = testResult.assertions.filter((a) => !a.passed);
           if (failures.length > 0) {
-            console.log(`    Issues:`);
+            console.log("    Issues:");
             for (const f of failures) {
-              console.log(
-                `      ${chalk.red("✗")} ${f.name}: ${chalk.gray(f.message || "")}`,
-              );
+              console.log(`      ${chalk.red("✗")} ${f.name}: ${chalk.gray(f.message || "")}`);
             }
           }
           console.log("");
@@ -156,33 +142,23 @@ export function registerSandboxCommand(program: Command) {
           if (existsSync(skillsDir)) {
             const entries = await readdir(skillsDir, { withFileTypes: true });
             for (const entry of entries) {
-              if (
-                entry.isDirectory() &&
-                existsSync(join(skillsDir, entry.name, "SKILL.md"))
-              ) {
+              if (entry.isDirectory() && existsSync(join(skillsDir, entry.name, "SKILL.md"))) {
                 existingPaths.push(join(skillsDir, entry.name));
               }
             }
           }
 
           if (existingPaths.length > 0) {
-            const { detectConflicts } =
-              await import("../../core/conflict-detector.js");
+            const { detectConflicts } = await import("../../core/conflict-detector.js");
             const result = await detectConflicts([...existingPaths, skillPath]);
             conflictSpinner.stop();
 
             console.log(chalk.bold("  ⚔️  Conflict Analysis"));
             if (result.conflicts.length === 0 && result.overlaps.length === 0) {
-              console.log(
-                chalk.green("    ✓ No conflicts with installed skills."),
-              );
+              console.log(chalk.green("    ✓ No conflicts with installed skills."));
             } else {
               if (result.conflicts.length > 0) {
-                console.log(
-                  chalk.red(
-                    `    ${result.conflicts.length} conflict(s) found:`,
-                  ),
-                );
+                console.log(chalk.red(`    ${result.conflicts.length} conflict(s) found:`));
                 for (const c of result.conflicts.slice(0, 3)) {
                   console.log(`      ${chalk.red("✗")} ${c.description}`);
                 }
@@ -198,9 +174,7 @@ export function registerSandboxCommand(program: Command) {
           } else {
             conflictSpinner.stop();
             console.log(chalk.bold("  ⚔️  Conflict Analysis"));
-            console.log(
-              chalk.green("    ✓ No installed skills to conflict with."),
-            );
+            console.log(chalk.green("    ✓ No installed skills to conflict with."));
           }
           console.log("");
         } catch {
@@ -213,11 +187,7 @@ export function registerSandboxCommand(program: Command) {
         console.log(
           `    This skill would consume ${chalk.yellow(`~${tokens} tokens`)} of your context budget.`,
         );
-        console.log(
-          chalk.gray(
-            "    Use `skills install` to proceed with installation.\n",
-          ),
-        );
+        console.log(chalk.gray("    Use `skills install` to proceed with installation.\n"));
 
         // Cleanup
         if (isTemp) {

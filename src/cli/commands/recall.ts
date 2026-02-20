@@ -4,12 +4,12 @@
  * (SkillKit calls this "memory" — we call it "recall")
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
-import { homedir } from "os";
+import type { Command } from "commander";
 
 interface MemoryEntry {
   key: string;
@@ -129,11 +129,7 @@ async function saveStore(store: MemoryStore): Promise<void> {
   await writeFile(MEMORY_FILE, JSON.stringify(store, null, 2));
 }
 
-async function recallSave(
-  key: string,
-  value: string,
-  tags?: string,
-): Promise<void> {
+async function recallSave(key: string, value: string, tags?: string): Promise<void> {
   const store = await loadStore();
   const now = new Date().toISOString();
   const tagList = tags ? tags.split(",").map((t) => t.trim()) : [];
@@ -141,8 +137,7 @@ async function recallSave(
   const existing = store.entries.findIndex((e) => e.key === key);
   if (existing >= 0) {
     store.entries[existing].value = value;
-    store.entries[existing].tags =
-      tagList.length > 0 ? tagList : store.entries[existing].tags;
+    store.entries[existing].tags = tagList.length > 0 ? tagList : store.entries[existing].tags;
     store.entries[existing].updatedAt = now;
     console.log(chalk.green(`✓ Updated memory: ${chalk.cyan(key)}`));
   } else {
@@ -200,8 +195,7 @@ async function recallList(tag?: string, json?: boolean): Promise<void> {
   console.log("");
 
   for (const entry of entries) {
-    const tags =
-      entry.tags.length > 0 ? chalk.dim(` [${entry.tags.join(", ")}]`) : "";
+    const tags = entry.tags.length > 0 ? chalk.dim(` [${entry.tags.join(", ")}]`) : "";
     console.log(
       `  ${chalk.cyan(entry.key.padEnd(25))} ${entry.value.substring(0, 50)}${entry.value.length > 50 ? "…" : ""}${tags}`,
     );

@@ -8,9 +8,9 @@
  *   conditional — context-dependent ("for React use A, for Vue use B")
  */
 
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-import { join, basename } from "path";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import matter from "gray-matter";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -65,9 +65,7 @@ interface Section {
 /**
  * Compose multiple skills into one.
  */
-export async function composeSkills(
-  options: ComposeOptions,
-): Promise<ComposedSkill> {
+export async function composeSkills(options: ComposeOptions): Promise<ComposedSkill> {
   const { skills: paths, output, strategy, dedup } = options;
 
   // Load all skills
@@ -84,8 +82,7 @@ export async function composeSkills(
   if (skills.length === 1) {
     // Just return the single skill with new name
     const s = skills[0];
-    const fullContent =
-      buildFrontmatter(output, s.description, [s.name]) + "\n" + s.body;
+    const fullContent = `${buildFrontmatter(output, s.description, [s.name])}\n${s.body}`;
     return {
       name: output,
       description: s.description,
@@ -107,20 +104,19 @@ export async function composeSkills(
     case "conditional":
       body = composeConditional(skills);
       break;
-    case "merge":
-    default:
+    default: {
       const result = composeMerge(skills, dedup);
       body = result.body;
       dedupCount = result.deduplicatedCount;
       break;
+    }
   }
 
   const descriptions = skills.map((s) => s.description).filter(Boolean);
   const description = `Composed skill combining: ${skills.map((s) => s.name).join(", ")}. ${descriptions[0] || ""}`;
 
   const sourceSkills = skills.map((s) => s.name);
-  const fullContent =
-    buildFrontmatter(output, description, sourceSkills) + "\n" + body;
+  const fullContent = `${buildFrontmatter(output, description, sourceSkills)}\n${body}`;
 
   return {
     name: output,
@@ -147,7 +143,7 @@ function composeMerge(
     for (const section of skill.sections) {
       const key = normalizeHeading(section.heading);
       if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push({ skill: skill.name, content: section.content });
+      groups.get(key)?.push({ skill: skill.name, content: section.content });
     }
   }
 
@@ -156,9 +152,7 @@ function composeMerge(
   for (const [heading, entries] of groups) {
     // Use the most descriptive heading
     const displayHeading =
-      heading === "(intro)"
-        ? ""
-        : `## ${heading.charAt(0).toUpperCase() + heading.slice(1)}`;
+      heading === "(intro)" ? "" : `## ${heading.charAt(0).toUpperCase() + heading.slice(1)}`;
 
     if (displayHeading) lines.push(displayHeading);
 
@@ -205,9 +199,7 @@ function composeMerge(
 function composeChain(skills: ParsedSkill[]): string {
   const lines: string[] = [];
 
-  lines.push(
-    "This is a composed skill. Apply the following sections in order:\n",
-  );
+  lines.push("This is a composed skill. Apply the following sections in order:\n");
 
   for (let i = 0; i < skills.length; i++) {
     const skill = skills[i];
@@ -323,11 +315,7 @@ function normalizeHeading(heading: string): string {
   return normalized;
 }
 
-function buildFrontmatter(
-  name: string,
-  description: string,
-  sources: string[],
-): string {
+function buildFrontmatter(name: string, description: string, sources: string[]): string {
   return [
     "---",
     `name: ${name}`,

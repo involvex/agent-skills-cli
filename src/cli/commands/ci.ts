@@ -4,11 +4,11 @@
  * (SkillKit calls this "cicd" — we call it "ci")
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
+import type { Command } from "commander";
 
 type CIPlatform = "github" | "gitlab" | "bitbucket";
 
@@ -33,10 +33,7 @@ export function registerCiCommand(program: Command): void {
 }
 
 async function ciCommand(platform: CIPlatform, options: any): Promise<void> {
-  const generators: Record<
-    CIPlatform,
-    () => { path: string; content: string }
-  > = {
+  const generators: Record<CIPlatform, () => { path: string; content: string }> = {
     github: () => generateGitHubActions(options),
     gitlab: () => generateGitLabCI(options),
     bitbucket: () => generateBitbucketPipelines(options),
@@ -56,11 +53,7 @@ async function ciCommand(platform: CIPlatform, options: any): Promise<void> {
 
   if (existsSync(finalPath)) {
     console.log(chalk.yellow(`⚠ File already exists: ${finalPath}`));
-    console.log(
-      chalk.dim(
-        "  Delete it first or use --output to specify a different location",
-      ),
-    );
+    console.log(chalk.dim("  Delete it first or use --output to specify a different location"));
     return;
   }
 
@@ -73,11 +66,10 @@ async function ciCommand(platform: CIPlatform, options: any): Promise<void> {
   console.log(`  ${chalk.dim("File:")} ${chalk.cyan(finalPath)}`);
   console.log("");
   console.log(chalk.dim("Features:"));
-  if (options.validate !== false)
-    console.log(chalk.dim("  ✓ Skill validation"));
+  if (options.validate !== false) console.log(chalk.dim("  ✓ Skill validation"));
   if (options.audit !== false) console.log(chalk.dim("  ✓ Security audit"));
   console.log("");
-  console.log(chalk.dim(`Commit and push to activate the workflow.`));
+  console.log(chalk.dim("Commit and push to activate the workflow."));
   console.log("");
 }
 

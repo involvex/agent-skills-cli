@@ -5,8 +5,8 @@
  */
 
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
 
 /**
  * Register the submit-repo command
@@ -55,19 +55,12 @@ async function submitRepoCommand(repo: string): Promise<void> {
 
   let repoData: any;
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${owner}/${repoName}`,
-      {
-        headers: { Accept: "application/vnd.github.v3+json" },
-      },
-    );
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repoName}`, {
+      headers: { Accept: "application/vnd.github.v3+json" },
+    });
 
     if (!res.ok) {
-      spinner.fail(
-        res.status === 404
-          ? "Repository not found"
-          : `GitHub API error: ${res.status}`,
-      );
+      spinner.fail(res.status === 404 ? "Repository not found" : `GitHub API error: ${res.status}`);
       process.exit(1);
     }
 
@@ -100,9 +93,7 @@ async function submitRepoCommand(repo: string): Promise<void> {
   }
 
   if (skillPaths.length === 0) {
-    scanSpinner.warn(
-      "No SKILL.md files found — repo will still be submitted for review",
-    );
+    scanSpinner.warn("No SKILL.md files found — repo will still be submitted for review");
   } else {
     scanSpinner.succeed(`Found ${chalk.bold(skillPaths.length)} skill(s)`);
     for (const p of skillPaths.slice(0, 5)) {
@@ -137,9 +128,7 @@ async function submitRepoCommand(repo: string): Promise<void> {
       submitSpinner.succeed("Submitted!");
       console.log("");
       console.log(chalk.green("✨ Your repo has been submitted for indexing!"));
-      console.log(
-        chalk.dim("  Skills will appear in the marketplace once processed."),
-      );
+      console.log(chalk.dim("  Skills will appear in the marketplace once processed."));
     } else {
       const data = (await response.json().catch(() => ({}))) as any;
       if (response.status === 409) {
@@ -154,9 +143,7 @@ async function submitRepoCommand(repo: string): Promise<void> {
     console.log(chalk.dim(`  ${err.message}`));
     console.log(chalk.dim("  Submit via GitHub issue instead:"));
     console.log(
-      chalk.dim(
-        `  ${chalk.white("https://github.com/Karanjot786/agent-skills-cli/issues/new")}`,
-      ),
+      chalk.dim(`  ${chalk.white("https://github.com/Karanjot786/agent-skills-cli/issues/new")}`),
     );
   }
 

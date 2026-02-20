@@ -1,8 +1,8 @@
+import chalk from "chalk";
 /**
  * `skills list` command — List all discovered skills
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import { discoverSkills } from "../../core/index.js";
 
 export function registerListCommand(program: Command) {
@@ -66,14 +66,12 @@ export function registerListCommand(program: Command) {
           );
 
           console.log("");
-          console.log(chalk.bold("Name".padEnd(maxName + 2) + "Description"));
+          console.log(chalk.bold(`${"Name".padEnd(maxName + 2)}Description`));
           console.log("─".repeat(maxName + 2 + maxDesc));
 
           for (const skill of skills) {
             const desc = (skill.description || "").slice(0, 50);
-            console.log(
-              chalk.cyan(skill.name.padEnd(maxName + 2)) + chalk.gray(desc),
-            );
+            console.log(chalk.cyan(skill.name.padEnd(maxName + 2)) + chalk.gray(desc));
           }
           console.log("");
           return;

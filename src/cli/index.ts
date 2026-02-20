@@ -7,71 +7,66 @@
  * and shared config lives in ./agents.ts.
  */
 
-import { Command } from "commander";
+import * as p from "@clack/prompts";
 import chalk from "chalk";
+import { Command } from "commander";
 import inquirer from "inquirer";
 import ora from "ora";
-import * as p from "@clack/prompts";
-import {
-  discoverSkills,
-  listMarketplaceSkills,
-  installSkill,
-  fetchSkillsForCLI,
-} from "../core/index.js";
+import { fetchSkillsForCLI, listMarketplaceSkills } from "../core/index.js";
 import { setVersion } from "../core/telemetry.js";
 import { AGENTS } from "./agents.js";
 
+import { registerExportCommand } from "./commands/export.js";
+import { registerInstallCommand } from "./commands/install.js";
+import { registerInteractiveCommands } from "./commands/interactive.js";
 // ─── Modular command imports ────────────────────────────────────────────────
 import { registerListCommand } from "./commands/list.js";
-import { registerValidateCommand } from "./commands/validate.js";
-import { registerShowCommand } from "./commands/show.js";
 import { registerMarketplaceCommands } from "./commands/marketplace.js";
 import { registerSearchInstallCommand } from "./commands/search.js";
-import { registerInstallCommand } from "./commands/install.js";
-import { registerExportCommand } from "./commands/export.js";
+import { registerShowCommand } from "./commands/show.js";
 import {
-  registerDoctorCommand,
   registerCheckCommand,
-  registerUpdateCommand,
+  registerDoctorCommand,
   registerExecCommand,
+  registerUpdateCommand,
 } from "./commands/utils-commands.js";
-import { registerInteractiveCommands } from "./commands/interactive.js";
+import { registerValidateCommand } from "./commands/validate.js";
 
-// ─── Already-extracted command imports ──────────────────────────────────────
-import { registerRemoveCommand } from "./commands/remove.js";
-import { registerSuggestCommand } from "./commands/suggest.js";
 import { registerAuditCommand } from "./commands/audit.js";
-import { registerCraftCommand } from "./commands/craft.js";
-import { registerSubmitCommand } from "./commands/submit.js";
+import { registerBlueprintCommand } from "./commands/blueprint.js";
 import { registerBootstrapCommand } from "./commands/bootstrap.js";
-import { registerConvertCommand } from "./commands/convert.js";
+import { registerCaptureCommand } from "./commands/capture.js";
+import { registerCiCommand } from "./commands/ci.js";
 import { registerCollabCommand } from "./commands/collab.js";
-import { registerLockspecCommand } from "./commands/lockspec.js";
+import { registerConvertCommand } from "./commands/convert.js";
+import { registerCraftCommand } from "./commands/craft.js";
 import { registerForgeCommand } from "./commands/forge.js";
+import { registerGridCommand } from "./commands/grid.js";
+import { registerInsightCommand } from "./commands/insight.js";
+import { registerLockspecCommand } from "./commands/lockspec.js";
+import { registerMethodCommand } from "./commands/method.js";
 import { registerMineCommand } from "./commands/mine.js";
 import { registerRecallCommand } from "./commands/recall.js";
-import { registerGridCommand } from "./commands/grid.js";
-import { registerCaptureCommand } from "./commands/capture.js";
-import { registerTriggerCommand } from "./commands/trigger.js";
+// ─── Already-extracted command imports ──────────────────────────────────────
+import { registerRemoveCommand } from "./commands/remove.js";
 import { registerRuleCommand } from "./commands/rule.js";
-import { registerBlueprintCommand } from "./commands/blueprint.js";
-import { registerCiCommand } from "./commands/ci.js";
-import { registerTrackCommand } from "./commands/track.js";
-import { registerInsightCommand } from "./commands/insight.js";
 import { registerScoreCommand } from "./commands/score.js";
 import { registerSubmitRepoCommand } from "./commands/submit-repo.js";
-import { registerMethodCommand } from "./commands/method.js";
+import { registerSubmitCommand } from "./commands/submit.js";
+import { registerSuggestCommand } from "./commands/suggest.js";
+import { registerTrackCommand } from "./commands/track.js";
+import { registerTriggerCommand } from "./commands/trigger.js";
 
+import { registerBenchCommand } from "./commands/bench.js";
+import { registerComposeCommand } from "./commands/compose.js";
 // ─── v1.1.4 Unique Feature Commands ────────────────────────────────────────
 import { registerContextCommand } from "./commands/context.js";
 import { registerDiffCommand } from "./commands/diff.js";
-import { registerComposeCommand } from "./commands/compose.js";
-import { registerTestCommand } from "./commands/test.js";
 import { registerFrozenCommand } from "./commands/frozen.js";
 import { registerSandboxCommand } from "./commands/sandbox.js";
-import { registerWatchCommand } from "./commands/watch.js";
 import { registerSplitCommand } from "./commands/split.js";
-import { registerBenchCommand } from "./commands/bench.js";
+import { registerTestCommand } from "./commands/test.js";
+import { registerWatchCommand } from "./commands/watch.js";
 
 // ─── Program setup ─────────────────────────────────────────────────────────
 
@@ -121,10 +116,8 @@ async function showMainMenu() {
     const result = await fetchSkillsForCLI({ limit: 100, sortBy: "stars" });
     marketplaceSkills = result.skills;
     total = result.total;
-    spinner.succeed(
-      `Found ${total.toLocaleString()} skills (showing top 100 by stars)`,
-    );
-  } catch (err) {
+    spinner.succeed(`Found ${total.toLocaleString()} skills (showing top 100 by stars)`);
+  } catch (_err) {
     spinner.text = "Falling back to GitHub sources...";
     marketplaceSkills = await listMarketplaceSkills();
     total = marketplaceSkills.length;
@@ -167,16 +160,14 @@ async function showMainMenu() {
   console.log("");
 
   const { getSkillByScoped } = await import("../core/skillsdb.js");
-  const { mkdir, cp, rm } = await import("fs/promises");
-  const { join } = await import("path");
-  const { tmpdir } = await import("os");
-  const { exec } = await import("child_process");
-  const { promisify } = await import("util");
+  const { mkdir, cp, rm } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const { tmpdir } = await import("node:os");
+  const { exec } = await import("node:child_process");
+  const { promisify } = await import("node:util");
   const execAsync = promisify(exec);
 
-  async function installSkillToPlatforms(
-    skill: any,
-  ): Promise<{
+  async function installSkillToPlatforms(skill: any): Promise<{
     success: boolean;
     name: string;
     scopedName?: string;
@@ -188,12 +179,9 @@ async function showMainMenu() {
         return { success: false, name: skill.name, error: "Skill not found" };
       }
 
-      const githubUrl =
-        (dbSkill as any).github_url || (dbSkill as any).githubUrl;
+      const githubUrl = (dbSkill as any).github_url || (dbSkill as any).githubUrl;
       const scopedName =
-        (dbSkill as any).scoped_name ||
-        (dbSkill as any).scopedName ||
-        skill.scopedName;
+        (dbSkill as any).scoped_name || (dbSkill as any).scopedName || skill.scopedName;
 
       if (!githubUrl) {
         return {
@@ -214,15 +202,9 @@ async function showMainMenu() {
 
       const [, owner, repo] = urlMatch;
       const branch = (dbSkill as any).branch || "main";
-      const skillPath = ((dbSkill as any).path || "").replace(
-        /\/SKILL\.md$/i,
-        "",
-      );
+      const skillPath = ((dbSkill as any).path || "").replace(/\/SKILL\.md$/i, "");
 
-      const tempDir = join(
-        tmpdir(),
-        `skill-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      );
+      const tempDir = join(tmpdir(), `skill-${Date.now()}-${Math.random().toString(36).slice(2)}`);
       await mkdir(tempDir, { recursive: true });
 
       try {
@@ -256,14 +238,8 @@ async function showMainMenu() {
     }
   }
 
-  console.log(
-    chalk.bold(
-      `📦 Installing ${selectedSkills.length} skill(s) in parallel...\n`,
-    ),
-  );
-  const downloadSpinner = ora(
-    `Downloading ${selectedSkills.length} skills...`,
-  ).start();
+  console.log(chalk.bold(`📦 Installing ${selectedSkills.length} skill(s) in parallel...\n`));
+  const downloadSpinner = ora(`Downloading ${selectedSkills.length} skills...`).start();
 
   const results = await Promise.all(
     selectedSkills.map((skill: any) => installSkillToPlatforms(skill)),

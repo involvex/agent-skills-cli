@@ -3,15 +3,15 @@
  * Scans skill files against 46+ rules for 6 threat categories
  */
 
-import { readFile, readdir, stat } from "fs/promises";
-import { join, relative, extname } from "path";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { extname, join, relative } from "node:path";
 import {
   SCANNER_RULES,
-  createEmptyScanResult,
   type ScanFinding,
   type ScanResult,
-  type Severity,
   type ScannerRule,
+  type Severity,
+  createEmptyScanResult,
 } from "./scanner-rules.js";
 
 export type { ScanResult, ScanFinding, Severity };
@@ -72,11 +72,7 @@ async function collectFiles(dir: string, baseDir: string): Promise<string[]> {
       } else if (entry.isFile()) {
         const ext = extname(entry.name).toLowerCase();
         // Scan known extensions or extensionless files (like SKILL.md)
-        if (
-          SCANNABLE_EXTENSIONS.has(ext) ||
-          entry.name === "SKILL.md" ||
-          !ext
-        ) {
+        if (SCANNABLE_EXTENSIONS.has(ext) || entry.name === "SKILL.md" || !ext) {
           const fileStat = await stat(fullPath);
           if (fileStat.size <= MAX_FILE_SIZE) {
             files.push(fullPath);
@@ -94,11 +90,7 @@ async function collectFiles(dir: string, baseDir: string): Promise<string[]> {
 /**
  * Scan a single file against all rules
  */
-function scanFile(
-  content: string,
-  filePath: string,
-  rules: ScannerRule[],
-): ScanFinding[] {
+function scanFile(content: string, filePath: string, rules: ScannerRule[]): ScanFinding[] {
   const findings: ScanFinding[] = [];
   const lines = content.split("\n");
 
@@ -189,13 +181,7 @@ export async function runAudit(
  * Check if audit should fail based on severity threshold
  */
 export function shouldFail(result: ScanResult, failOn: Severity): boolean {
-  const severityOrder: Severity[] = [
-    "critical",
-    "high",
-    "medium",
-    "low",
-    "info",
-  ];
+  const severityOrder: Severity[] = ["critical", "high", "medium", "low", "info"];
   const threshold = severityOrder.indexOf(failOn);
 
   for (const finding of result.findings) {

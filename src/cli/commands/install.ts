@@ -1,3 +1,5 @@
+import * as p from "@clack/prompts";
+import chalk from "chalk";
 /**
  * `skills install` command — Install skills from various sources
  *
@@ -9,29 +11,24 @@
  * - Local directories
  * - Lock file reinstallation
  */
-import { Command } from "commander";
-import chalk from "chalk";
-import ora from "ora";
+import type { Command } from "commander";
 import inquirer from "inquirer";
-import * as p from "@clack/prompts";
-import { AGENTS, AgentConfig } from "../agents.js";
+import ora from "ora";
 import {
   addSkillToLock,
-  createLockEntry,
-  installFromGitHubUrl,
-  getSkillByScoped,
-  fetchSkillsForCLI,
-  parseSource,
   cloneWithAuth,
+  createLockEntry,
+  fetchSkillsForCLI,
+  getSkillByScoped,
+  installFromGitHubUrl,
+  parseSource,
   sanitizeUrl,
 } from "../../core/index.js";
 import { trackCommand } from "../../core/telemetry.js";
+import { AGENTS, type AgentConfig } from "../agents.js";
 
 /** Install a skill from its database record into a target directory */
-async function installSkillFromDatabase(
-  skill: any,
-  targetDir: string,
-): Promise<string> {
+async function installSkillFromDatabase(skill: any, targetDir: string): Promise<string> {
   const githubUrl = skill.github_url || skill.githubUrl;
   if (githubUrl) {
     const result = await installFromGitHubUrl(githubUrl, targetDir);
@@ -45,9 +42,7 @@ export function registerInstallCommand(program: Command) {
     .command("install [source]")
     .alias("i")
     .alias("add")
-    .description(
-      "Install skill(s) from marketplace, GitHub URL, or local directory",
-    )
+    .description("Install skill(s) from marketplace, GitHub URL, or local directory")
     .option("-g, --global", "Install globally (user-wide)")
     .option("-s, --skill <skills...>", "Specify skill names to install")
     .option("-a, --agent <agents...>", "Specify agents to install to")
@@ -57,13 +52,12 @@ export function registerInstallCommand(program: Command) {
     .option("--registry <url>", "npm registry URL (for npm: sources)")
     .action(async (source, options) => {
       try {
-        const { mkdir, cp, rm, readdir, readFile } =
-          await import("fs/promises");
-        const { existsSync, statSync } = await import("fs");
-        const { join, basename, dirname } = await import("path");
-        const { tmpdir } = await import("os");
-        const { exec } = await import("child_process");
-        const { promisify } = await import("util");
+        const { mkdir, cp, rm, readdir, readFile } = await import("node:fs/promises");
+        const { existsSync, statSync } = await import("node:fs");
+        const { join, basename, dirname } = await import("node:path");
+        const { tmpdir } = await import("node:os");
+        const { exec } = await import("node:child_process");
+        const { promisify } = await import("node:util");
         const execAsync = promisify(exec);
 
         const isGlobal = options.global || false;
@@ -123,29 +117,15 @@ export function registerInstallCommand(program: Command) {
 
           if (!source && !options.skill) {
             console.log(chalk.yellow("\nUsage:"));
+            console.log(chalk.gray("  skills install <owner/repo>      Install from GitHub"));
+            console.log(chalk.gray("  skills install <url>             Install from URL"));
             console.log(
-              chalk.gray(
-                "  skills install <owner/repo>      Install from GitHub",
-              ),
+              chalk.gray("  skills install .                 Install from current directory"),
             );
             console.log(
-              chalk.gray("  skills install <url>             Install from URL"),
+              chalk.gray("  skills install -s <name>         Install from marketplace by name"),
             );
-            console.log(
-              chalk.gray(
-                "  skills install .                 Install from current directory",
-              ),
-            );
-            console.log(
-              chalk.gray(
-                "  skills install -s <name>         Install from marketplace by name",
-              ),
-            );
-            console.log(
-              chalk.gray(
-                "  skills install                   Reinstall from lock file",
-              ),
-            );
+            console.log(chalk.gray("  skills install                   Reinstall from lock file"));
             return;
           }
         }
@@ -157,29 +137,20 @@ export function registerInstallCommand(program: Command) {
           const lockSkills = Object.values(lock.skills);
 
           console.log(
-            chalk.bold(
-              `\n📦 Reinstalling ${lockSkills.length} skills from lock file...\n`,
-            ),
+            chalk.bold(`\n📦 Reinstalling ${lockSkills.length} skills from lock file...\n`),
           );
 
           let successCount = 0;
           for (const lockSkill of lockSkills) {
-            const spinner = ora(
-              `Installing ${lockSkill.scopedName}...`,
-            ).start();
+            const spinner = ora(`Installing ${lockSkill.scopedName}...`).start();
             try {
               for (const agent of lockSkill.agents) {
                 const config = AGENTS[agent];
                 if (!config) continue;
 
-                const targetDir = lockSkill.isGlobal
-                  ? config.globalDir
-                  : config.projectDir;
+                const targetDir = lockSkill.isGlobal ? config.globalDir : config.projectDir;
 
-                if (
-                  lockSkill.sourceType === "github" ||
-                  lockSkill.sourceType === "gitlab"
-                ) {
+                if (lockSkill.sourceType === "github" || lockSkill.sourceType === "gitlab") {
                   const tempDir = join(tmpdir(), `skill-install-${Date.now()}`);
                   await mkdir(tempDir, { recursive: true });
                   await execAsync(`git clone --depth 1 ${lockSkill.source} .`, {
@@ -189,9 +160,7 @@ export function registerInstallCommand(program: Command) {
                   const skillDir = join(targetDir, lockSkill.name);
                   await mkdir(skillDir, { recursive: true });
                   await cp(tempDir, skillDir, { recursive: true });
-                  await rm(tempDir, { recursive: true, force: true }).catch(
-                    () => {},
-                  );
+                  await rm(tempDir, { recursive: true, force: true }).catch(() => {});
                 }
               }
               spinner.succeed(`${lockSkill.scopedName}`);
@@ -202,9 +171,7 @@ export function registerInstallCommand(program: Command) {
           }
 
           console.log(
-            chalk.bold.green(
-              `\n✨ Reinstalled ${successCount}/${lockSkills.length} skills\n`,
-            ),
+            chalk.bold.green(`\n✨ Reinstalled ${successCount}/${lockSkills.length} skills\n`),
           );
           return;
         }
@@ -240,9 +207,7 @@ export function registerInstallCommand(program: Command) {
 
               for (const agent of agents) {
                 const config = AGENTS[agent];
-                const targetDir = isGlobal
-                  ? config.globalDir
-                  : config.projectDir;
+                const targetDir = isGlobal ? config.globalDir : config.projectDir;
                 await installSkillFromDatabase(skill as any, targetDir);
               }
 
@@ -261,9 +226,7 @@ export function registerInstallCommand(program: Command) {
               });
               await addSkillToLock(lockEntry);
 
-              spinner.succeed(
-                `Installed ${(skill as any).scoped_name || skill.name}`,
-              );
+              spinner.succeed(`Installed ${(skill as any).scoped_name || skill.name}`);
             } catch (err: any) {
               spinner.fail(`${skillName}: ${err.message}`);
             }
@@ -284,18 +247,14 @@ export function registerInstallCommand(program: Command) {
           }
 
           const skillName = basename(sourcePath);
-          console.log(
-            chalk.bold(`\n📦 Installing from local directory: ${skillName}\n`),
-          );
+          console.log(chalk.bold(`\n📦 Installing from local directory: ${skillName}\n`));
 
           for (const agent of agents) {
             const config = AGENTS[agent];
             const targetDir = isGlobal ? config.globalDir : config.projectDir;
             const skillDir = join(targetDir, skillName);
 
-            const spinner = ora(
-              `Installing to ${config.displayName}...`,
-            ).start();
+            const spinner = ora(`Installing to ${config.displayName}...`).start();
             await mkdir(skillDir, { recursive: true });
             await cp(sourcePath, skillDir, { recursive: true });
             spinner.succeed(`${config.displayName}: ${skillDir}`);
@@ -318,13 +277,11 @@ export function registerInstallCommand(program: Command) {
         }
 
         // ── Parse source with the unified source parser ──
-        let parsed = parseSource(source);
+        const parsed = parseSource(source);
 
         // ── Handle @scoped/name — try marketplace first, fallback to GitHub ──
         if (source.startsWith("@")) {
-          const spinner = ora(
-            `Looking up "${source}" in marketplace...`,
-          ).start();
+          const spinner = ora(`Looking up "${source}" in marketplace...`).start();
           try {
             const skill = await getSkillByScoped(source);
 
@@ -333,9 +290,7 @@ export function registerInstallCommand(program: Command) {
 
               for (const agent of agents) {
                 const config = AGENTS[agent];
-                const targetDir = isGlobal
-                  ? config.globalDir
-                  : config.projectDir;
+                const targetDir = isGlobal ? config.globalDir : config.projectDir;
                 await installSkillFromDatabase(skill as any, targetDir);
               }
 
@@ -353,29 +308,21 @@ export function registerInstallCommand(program: Command) {
               });
               await addSkillToLock(lockEntry);
 
-              spinner.succeed(
-                `Installed ${(skill as any).scoped_name || skill.name}`,
-              );
+              spinner.succeed(`Installed ${(skill as any).scoped_name || skill.name}`);
               console.log("");
               return;
-            } else {
-              // Not in marketplace — strip @ and try as GitHub owner/repo
-              const withoutAt = source.slice(1);
-              spinner.info(
-                `Not found in marketplace, trying as GitHub repo: ${withoutAt}`,
-              );
-              source = withoutAt;
-              // Re-parse the source without @
-              const reparsed = parseSource(source);
-              Object.assign(parsed, reparsed);
-              // Fall through to git-based install below
             }
+            // Not in marketplace — strip @ and try as GitHub owner/repo
+            const withoutAt = source.slice(1);
+            spinner.info(`Not found in marketplace, trying as GitHub repo: ${withoutAt}`);
+            source = withoutAt;
+            // Re-parse the source without @
+            const reparsed = parseSource(source);
+            Object.assign(parsed, reparsed);
           } catch {
             // Marketplace unavailable — strip @ and try as GitHub owner/repo
             const withoutAt = source.slice(1);
-            spinner.info(
-              `Marketplace unavailable, trying as GitHub repo: ${withoutAt}`,
-            );
+            spinner.info(`Marketplace unavailable, trying as GitHub repo: ${withoutAt}`);
             source = withoutAt;
             const reparsed = parseSource(source);
             Object.assign(parsed, reparsed);
@@ -445,15 +392,11 @@ export function registerInstallCommand(program: Command) {
 
             for (const skillSourceDir of skillDirs) {
               const skillName =
-                skillSourceDir === extractedDir
-                  ? pkgName
-                  : basename(skillSourceDir);
+                skillSourceDir === extractedDir ? pkgName : basename(skillSourceDir);
 
               for (const agent of agents) {
                 const config = AGENTS[agent];
-                const targetDir = isGlobal
-                  ? config.globalDir
-                  : config.projectDir;
+                const targetDir = isGlobal ? config.globalDir : config.projectDir;
                 const skillDir = join(targetDir, skillName);
 
                 const installSpinner = ora(
@@ -492,14 +435,9 @@ export function registerInstallCommand(program: Command) {
             await rm(tempDir, { recursive: true, force: true }).catch(() => {});
 
             console.log(
-              chalk.bold.green(
-                `\n✨ Installed ${skillDirs.length} skill(s) from npm:${spec}\n`,
-              ),
+              chalk.bold.green(`\n✨ Installed ${skillDirs.length} skill(s) from npm:${spec}\n`),
             );
-            trackCommand(
-              "install",
-              `source=npm:${spec} count=${skillDirs.length}`,
-            );
+            trackCommand("install", `source=npm:${spec} count=${skillDirs.length}`);
           } catch (err: any) {
             packSpinner.fail(`npm error: ${err.message}`);
             await rm(tempDir, { recursive: true, force: true }).catch(() => {});
@@ -515,15 +453,9 @@ export function registerInstallCommand(program: Command) {
           parsed.type === "private-git"
         ) {
           // For owner/repo shorthand or full GitHub URLs, also try marketplace lookup
-          if (
-            parsed.type === "github" &&
-            !source.includes("://") &&
-            !source.startsWith("git@")
-          ) {
+          if (parsed.type === "github" && !source.includes("://") && !source.startsWith("git@")) {
             // owner/repo shorthand — try marketplace first
-            const spinner = ora(
-              `Looking up "${source}" in marketplace...`,
-            ).start();
+            const spinner = ora(`Looking up "${source}" in marketplace...`).start();
             try {
               let skill = await getSkillByScoped(source);
               if (!skill) {
@@ -542,9 +474,7 @@ export function registerInstallCommand(program: Command) {
 
                 for (const agent of agents) {
                   const config = AGENTS[agent];
-                  const targetDir = isGlobal
-                    ? config.globalDir
-                    : config.projectDir;
+                  const targetDir = isGlobal ? config.globalDir : config.projectDir;
                   await installSkillFromDatabase(skill as any, targetDir);
                 }
 
@@ -562,9 +492,7 @@ export function registerInstallCommand(program: Command) {
                 });
                 await addSkillToLock(lockEntry);
 
-                spinner.succeed(
-                  `Installed ${(skill as any).scoped_name || skill.name}`,
-                );
+                spinner.succeed(`Installed ${(skill as any).scoped_name || skill.name}`);
                 console.log("");
                 return;
               }
@@ -598,11 +526,7 @@ export function registerInstallCommand(program: Command) {
           }
 
           // Detect skills in repo (recursive, up to 3 levels deep)
-          async function findSkillDirs(
-            dir: string,
-            depth = 0,
-            maxDepth = 3,
-          ): Promise<string[]> {
+          async function findSkillDirs(dir: string, depth = 0, maxDepth = 3): Promise<string[]> {
             const results: string[] = [];
             if (existsSync(join(dir, "SKILL.md"))) {
               results.push(dir);
@@ -615,11 +539,7 @@ export function registerInstallCommand(program: Command) {
                   !entry.name.startsWith(".") &&
                   entry.name !== "node_modules"
                 ) {
-                  const sub = await findSkillDirs(
-                    join(dir, entry.name),
-                    depth + 1,
-                    maxDepth,
-                  );
+                  const sub = await findSkillDirs(join(dir, entry.name), depth + 1, maxDepth);
                   results.push(...sub);
                 }
               }
@@ -636,7 +556,7 @@ export function registerInstallCommand(program: Command) {
 
           // Interactive skill selection when multiple skills found
           if (skillDirs.length > 1) {
-            const { relative } = await import("path");
+            const { relative } = await import("node:path");
             const skillChoices = skillDirs.map((d) => ({
               label: basename(d),
               value: d,
@@ -658,9 +578,7 @@ export function registerInstallCommand(program: Command) {
 
             if (p.isCancel(selected)) {
               p.cancel("Installation cancelled");
-              await rm(tempDir, { recursive: true, force: true }).catch(
-                () => {},
-              );
+              await rm(tempDir, { recursive: true, force: true }).catch(() => {});
               return;
             }
 
@@ -670,21 +588,17 @@ export function registerInstallCommand(program: Command) {
             }
           }
 
-          const repoName =
-            parsed.url.split("/").pop()?.replace(".git", "") || "skill";
+          const repoName = parsed.url.split("/").pop()?.replace(".git", "") || "skill";
 
           for (const skillSourceDir of skillDirs) {
-            const skillName =
-              skillSourceDir === tempDir ? repoName : basename(skillSourceDir);
+            const skillName = skillSourceDir === tempDir ? repoName : basename(skillSourceDir);
 
             for (const agent of agents) {
               const config = AGENTS[agent];
               const targetDir = isGlobal ? config.globalDir : config.projectDir;
               const skillDir = join(targetDir, skillName);
 
-              const spinner = ora(
-                `Installing ${skillName} to ${config.displayName}...`,
-              ).start();
+              const spinner = ora(`Installing ${skillName} to ${config.displayName}...`).start();
               await mkdir(skillDir, { recursive: true });
               await cp(skillSourceDir, skillDir, { recursive: true });
               spinner.succeed(`${config.displayName}: ${skillDir}`);
@@ -711,9 +625,7 @@ export function registerInstallCommand(program: Command) {
               sourceType: sourceType as any,
               version,
               agents,
-              canonicalPath: isGlobal
-                ? AGENTS[agents[0]].globalDir
-                : AGENTS[agents[0]].projectDir,
+              canonicalPath: isGlobal ? AGENTS[agents[0]].globalDir : AGENTS[agents[0]].projectDir,
               isGlobal,
             });
             await addSkillToLock(lockEntry);
@@ -722,14 +634,9 @@ export function registerInstallCommand(program: Command) {
           // Cleanup
           await rm(tempDir, { recursive: true, force: true }).catch(() => {});
 
-          console.log(
-            chalk.bold.green(`\n✨ Installed ${skillDirs.length} skill(s)\n`),
-          );
+          console.log(chalk.bold.green(`\n✨ Installed ${skillDirs.length} skill(s)\n`));
 
-          trackCommand(
-            "install",
-            `source=${sanitizeUrl(parsed.url)} count=${skillDirs.length}`,
-          );
+          trackCommand("install", `source=${sanitizeUrl(parsed.url)} count=${skillDirs.length}`);
           return;
         }
 
@@ -737,26 +644,15 @@ export function registerInstallCommand(program: Command) {
         console.error(chalk.red(`Unrecognized source: ${source}`));
         console.log(chalk.gray("  Supported formats:"));
         console.log(chalk.gray("    skills install owner/repo"));
-        console.log(
-          chalk.gray("    skills install https://github.com/owner/repo"),
-        );
-        console.log(
-          chalk.gray("    skills install git@github.com:owner/repo.git"),
-        );
-        console.log(
-          chalk.gray("    skills install https://gitlab.com/owner/repo"),
-        );
-        console.log(
-          chalk.gray("    skills install https://bitbucket.org/owner/repo"),
-        );
+        console.log(chalk.gray("    skills install https://github.com/owner/repo"));
+        console.log(chalk.gray("    skills install git@github.com:owner/repo.git"));
+        console.log(chalk.gray("    skills install https://gitlab.com/owner/repo"));
+        console.log(chalk.gray("    skills install https://bitbucket.org/owner/repo"));
         console.log(chalk.gray("    skills install npm:@scope/package"));
         console.log(chalk.gray("    skills install ./local/path"));
         console.log(chalk.gray("    skills install -s skill-name"));
       } catch (error: any) {
-        console.error(
-          chalk.red("Error installing skill:"),
-          error.message || error,
-        );
+        console.error(chalk.red("Error installing skill:"), error.message || error);
         process.exit(1);
       }
     });

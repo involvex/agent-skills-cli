@@ -5,8 +5,8 @@
 
 import type {
   SkillMetadata,
-  ValidationResult,
   ValidationError,
+  ValidationResult,
   ValidationWarning,
 } from "../types/index.js";
 
@@ -26,9 +26,7 @@ const NAME_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 /**
  * Validate skill metadata against the Agent Skills specification
  */
-export function validateMetadata(
-  metadata: Partial<SkillMetadata>,
-): ValidationResult {
+export function validateMetadata(metadata: Partial<SkillMetadata>): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
@@ -107,8 +105,7 @@ export function validateMetadata(
     if (metadata.description.length < 50) {
       warnings.push({
         field: "description",
-        message:
-          "Description is short. Consider adding more detail about when to use this skill.",
+        message: "Description is short. Consider adding more detail about when to use this skill.",
         value: metadata.description.length,
       });
     }
@@ -175,10 +172,7 @@ export function validateBody(body: string): ValidationResult {
 /**
  * Format validation result for display
  */
-export function formatValidationResult(
-  result: ValidationResult,
-  skillName?: string,
-): string {
+export function formatValidationResult(result: ValidationResult, skillName?: string): string {
   const lines: string[] = [];
 
   if (skillName) {

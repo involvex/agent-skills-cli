@@ -1,9 +1,9 @@
+import chalk from "chalk";
 /**
  * Watch Mode Command
  * Watch for SKILL.md changes and auto-sync across agent directories.
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 
 export function registerWatchCommand(program: Command) {
   program
@@ -13,24 +13,21 @@ export function registerWatchCommand(program: Command) {
     .option("--debounce <ms>", "Debounce delay in milliseconds", "500")
     .action(async (dir: string | undefined, options: any) => {
       try {
-        const { existsSync, watch: fsWatch } = await import("fs");
-        const { readdir, copyFile, mkdir, readFile } =
-          await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join, basename, relative } = await import("path");
+        const { existsSync, watch: fsWatch } = await import("node:fs");
+        const { readdir, copyFile, mkdir, readFile } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join, basename, relative } = await import("node:path");
         const { AGENTS } = await import("../agents.js");
 
         const home = homedir();
         const watchDir = dir || join(home, ".antigravity", "skills");
 
         if (!existsSync(watchDir)) {
-          console.log(
-            chalk.red(`\n  ✗ Directory does not exist: ${watchDir}\n`),
-          );
+          console.log(chalk.red(`\n  ✗ Directory does not exist: ${watchDir}\n`));
           return;
         }
 
-        console.log(chalk.bold(`\n👁️  Watch Mode\n`));
+        console.log(chalk.bold("\n👁️  Watch Mode\n"));
         console.log(chalk.gray(`  Watching: ${watchDir}`));
 
         // Determine target agents
@@ -39,62 +36,55 @@ export function registerWatchCommand(program: Command) {
           : Object.keys(AGENTS);
 
         console.log(chalk.gray(`  Syncing to: ${targetAgents.join(", ")}`));
-        console.log(chalk.gray(`  Press Ctrl+C to stop.\n`));
+        console.log(chalk.gray("  Press Ctrl+C to stop.\n"));
 
         let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-        const debounceMs = parseInt(options.debounce) || 500;
+        const debounceMs = Number.parseInt(options.debounce) || 500;
 
         // Use Node.js built-in fs.watch (recursive supported on macOS)
-        const watcher = fsWatch(
-          watchDir,
-          { recursive: true },
-          (event, filename) => {
-            if (!filename) return;
+        const watcher = fsWatch(watchDir, { recursive: true }, (_event, filename) => {
+          if (!filename) return;
 
-            // Only react to SKILL.md changes
-            if (!filename.endsWith("SKILL.md") && !filename.endsWith(".md"))
-              return;
+          // Only react to SKILL.md changes
+          if (!filename.endsWith("SKILL.md") && !filename.endsWith(".md")) return;
 
-            // Debounce
-            if (debounceTimer) clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(async () => {
-              const fullPath = join(watchDir, filename);
-              if (!existsSync(fullPath)) return;
+          // Debounce
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(async () => {
+            const fullPath = join(watchDir, filename);
+            if (!existsSync(fullPath)) return;
 
-              const skillName = basename(join(watchDir, filename, ".."));
-              const timestamp = new Date().toLocaleTimeString();
+            const skillName = basename(join(watchDir, filename, ".."));
+            const timestamp = new Date().toLocaleTimeString();
 
-              console.log(
-                `  ${chalk.yellow("⟳")} ${chalk.gray(timestamp)} ${chalk.bold(skillName)} changed`,
-              );
+            console.log(
+              `  ${chalk.yellow("⟳")} ${chalk.gray(timestamp)} ${chalk.bold(skillName)} changed`,
+            );
 
-              // Sync to agent directories
-              let syncCount = 0;
-              for (const agent of targetAgents) {
-                const config = AGENTS[agent];
-                if (!config) continue;
+            // Sync to agent directories
+            let syncCount = 0;
+            for (const agent of targetAgents) {
+              const config = AGENTS[agent];
+              if (!config) continue;
 
-                const targetDir = join(config.globalDir, skillName);
-                try {
-                  await mkdir(targetDir, { recursive: true });
-                  const targetFile = join(targetDir, basename(filename));
-                  await copyFile(fullPath, targetFile);
-                  syncCount++;
-                } catch (err: any) {
-                  console.log(
-                    `    ${chalk.red("✗")} Failed to sync to ${config.displayName}: ${err.message}`,
-                  );
-                }
-              }
-
-              if (syncCount > 0) {
+              const targetDir = join(config.globalDir, skillName);
+              try {
+                await mkdir(targetDir, { recursive: true });
+                const targetFile = join(targetDir, basename(filename));
+                await copyFile(fullPath, targetFile);
+                syncCount++;
+              } catch (err: any) {
                 console.log(
-                  `    ${chalk.green("✓")} Synced to ${syncCount} agent(s)`,
+                  `    ${chalk.red("✗")} Failed to sync to ${config.displayName}: ${err.message}`,
                 );
               }
-            }, debounceMs);
-          },
-        );
+            }
+
+            if (syncCount > 0) {
+              console.log(`    ${chalk.green("✓")} Synced to ${syncCount} agent(s)`);
+            }
+          }, debounceMs);
+        });
 
         // Keep alive
         process.on("SIGINT", () => {

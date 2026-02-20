@@ -3,9 +3,9 @@
  * Safely executes skill scripts in a sandboxed environment
  */
 
-import { spawn } from "child_process";
-import { join, extname } from "path";
-import { existsSync } from "fs";
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { extname, join } from "node:path";
 import type { ScriptExecutionOptions, ScriptResult } from "../types/index.js";
 
 /**

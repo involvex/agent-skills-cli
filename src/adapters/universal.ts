@@ -4,18 +4,13 @@
  * Dynamically configured via the existing AGENTS record.
  */
 
-import { BaseAdapter, type ParsedSkillInput } from "./adapter.js";
+import { BaseAdapter } from "./adapter.js";
 
 export class UniversalAdapter extends BaseAdapter {
   readonly name: string;
   readonly displayName: string;
 
-  constructor(
-    name: string,
-    displayName: string,
-    projectDir: string,
-    globalDir: string,
-  ) {
+  constructor(name: string, displayName: string, projectDir: string, globalDir: string) {
     super(projectDir, globalDir);
     this.name = name;
     this.displayName = displayName;

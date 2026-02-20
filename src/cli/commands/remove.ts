@@ -3,18 +3,13 @@
  * Interactively remove installed skills
  */
 
+import { existsSync } from "node:fs";
+import { rm } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import * as p from "@clack/prompts";
 import chalk from "chalk";
-import { rm } from "fs/promises";
-import { existsSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
-import {
-  readLock,
-  removeSkillFromLock,
-  listInstalledSkills,
-  type LockEntry,
-} from "../../core/skill-lock.js";
+import { type LockEntry, listInstalledSkills, removeSkillFromLock } from "../../core/skill-lock.js";
 
 /**
  * Agent configuration (imported from main CLI)
@@ -48,8 +43,8 @@ export interface RemoveOptions {
  * @param agentConfigs - Agent configurations
  */
 export async function removeCommand(
-  skillNames: string[] = [],
-  options: RemoveOptions = {},
+  skillNames: string[],
+  options: RemoveOptions,
   agentConfigs: Record<string, AgentConfig>,
 ): Promise<void> {
   const spinner = p.spinner();
@@ -81,9 +76,7 @@ export async function removeCommand(
 
     selectedSkills = installed.filter((s) => {
       const nameMatch = namesLower.includes(s.name.toLowerCase());
-      const scopedMatch = namesLower.includes(
-        s.scopedName?.toLowerCase().replace(/^@/, "") || "",
-      );
+      const scopedMatch = namesLower.includes(s.scopedName?.toLowerCase().replace(/^@/, "") || "");
       return nameMatch || scopedMatch;
     });
 
@@ -112,9 +105,7 @@ export async function removeCommand(
       process.exit(0);
     }
 
-    selectedSkills = installed.filter((s) =>
-      (selected as string[]).includes(s.name),
-    );
+    selectedSkills = installed.filter((s) => (selected as string[]).includes(s.name));
   }
 
   if (selectedSkills.length === 0) {
@@ -155,7 +146,7 @@ export async function removeCommand(
   let removed = 0;
   let failed = 0;
   const cwd = process.cwd();
-  const home = homedir();
+  const _home = homedir();
 
   for (const skill of selectedSkills) {
     try {

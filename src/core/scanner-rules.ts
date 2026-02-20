@@ -77,8 +77,7 @@ export const SCANNER_RULES: ScannerRule[] = [
     severity: "high",
     title: "Instruction bypass",
     description: "Attempts to bypass safety restrictions",
-    pattern:
-      /(bypass|circumvent|override|disable)\s+(safety|restrictions?|filters?|guardrails?)/i,
+    pattern: /(bypass|circumvent|override|disable)\s+(safety|restrictions?|filters?|guardrails?)/i,
   },
   {
     id: "PI005",
@@ -123,8 +122,7 @@ export const SCANNER_RULES: ScannerRule[] = [
     severity: "critical",
     title: "Destructive command",
     description: "Potentially destructive shell command",
-    pattern:
-      /\b(rm\s+-rf\s+[\/~]|rmdir\s+\/s|del\s+\/f\s+\/s|format\s+[a-z]:)/i,
+    pattern: /\b(rm\s+-rf\s+[\/~]|rmdir\s+\/s|del\s+\/f\s+\/s|format\s+[a-z]:)/i,
   },
   {
     id: "CI002",
@@ -209,8 +207,7 @@ export const SCANNER_RULES: ScannerRule[] = [
     severity: "medium",
     title: "File read of sensitive paths",
     description: "Reading from sensitive system paths",
-    pattern:
-      /readFile(Sync)?\s*\(\s*['"`](\/etc\/(passwd|shadow|ssh)|~\/\.ssh|~\/\.aws)/,
+    pattern: /readFile(Sync)?\s*\(\s*['"`](\/etc\/(passwd|shadow|ssh)|~\/\.ssh|~\/\.aws)/,
   },
   {
     id: "DE005",
@@ -319,8 +316,7 @@ export const SCANNER_RULES: ScannerRule[] = [
     category: "unicode-steganography",
     severity: "high",
     title: "Zero-width characters",
-    description:
-      "Hidden zero-width characters that may contain embedded instructions",
+    description: "Hidden zero-width characters that may contain embedded instructions",
     pattern: /[\u200B\u200C\u200D\uFEFF\u200E\u200F]/,
   },
   {
@@ -336,10 +332,8 @@ export const SCANNER_RULES: ScannerRule[] = [
     category: "unicode-steganography",
     severity: "medium",
     title: "Homoglyph characters",
-    description:
-      "Characters that look like ASCII but are different Unicode codepoints",
-    pattern:
-      /[\u0410\u0412\u0415\u041A\u041C\u041D\u041E\u0420\u0421\u0422\u0425]/,
+    description: "Characters that look like ASCII but are different Unicode codepoints",
+    pattern: /[\u0410\u0412\u0415\u041A\u041C\u041D\u041E\u0420\u0421\u0422\u0425]/,
   },
   {
     id: "UC004",

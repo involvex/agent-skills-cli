@@ -4,12 +4,12 @@
  * (SkillKit calls this "team" — we call it "collab")
  */
 
-import chalk from "chalk";
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import * as p from "@clack/prompts";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
+import chalk from "chalk";
+import type { Command } from "commander";
 
 interface CollabConfig {
   team: string;
@@ -26,10 +26,7 @@ const COLLAB_FILE = ".skills-collab.json";
  * Register the collab command
  */
 export function registerCollabCommand(program: Command): void {
-  const collab = program
-    .command("collab")
-    .alias("cl")
-    .description("Team skill collaboration");
+  const collab = program.command("collab").alias("cl").description("Team skill collaboration");
 
   collab
     .command("init <team-name>")
@@ -111,9 +108,7 @@ async function collabInit(teamName: string): Promise<void> {
   const existing = await loadCollabConfig();
   if (existing) {
     console.error(
-      chalk.yellow(
-        `Team "${existing.team}" already initialized. Use collab status to view.`,
-      ),
+      chalk.yellow(`Team "${existing.team}" already initialized. Use collab status to view.`),
     );
     return;
   }
@@ -132,18 +127,16 @@ async function collabInit(teamName: string): Promise<void> {
   console.log(chalk.green(`✨ Team "${teamName}" initialized!`));
   console.log("");
   console.log(chalk.dim("Next steps:"));
-  console.log(chalk.dim(`  skills collab add <username>   Add team members`));
-  console.log(chalk.dim(`  skills collab share <skill>    Share a skill`));
-  console.log(chalk.dim(`  skills collab status           View team status`));
+  console.log(chalk.dim("  skills collab add <username>   Add team members"));
+  console.log(chalk.dim("  skills collab share <skill>    Share a skill"));
+  console.log(chalk.dim("  skills collab status           View team status"));
   console.log("");
 }
 
 async function collabAddMember(member: string): Promise<void> {
   const config = await loadCollabConfig();
   if (!config) {
-    console.error(
-      chalk.red("No team initialized. Run: skills collab init <team-name>"),
-    );
+    console.error(chalk.red("No team initialized. Run: skills collab init <team-name>"));
     process.exit(1);
   }
 
@@ -162,9 +155,7 @@ async function collabAddMember(member: string): Promise<void> {
 async function collabShare(skillName: string): Promise<void> {
   const config = await loadCollabConfig();
   if (!config) {
-    console.error(
-      chalk.red("No team initialized. Run: skills collab init <team-name>"),
-    );
+    console.error(chalk.red("No team initialized. Run: skills collab init <team-name>"));
     process.exit(1);
   }
 
@@ -176,20 +167,14 @@ async function collabShare(skillName: string): Promise<void> {
   config.sharedSkills.push(skillName);
   await saveCollabConfig(config);
 
-  console.log(
-    chalk.green(`✓ Shared "${skillName}" with team "${config.team}"`),
-  );
-  console.log(
-    chalk.dim(`  Total shared skills: ${config.sharedSkills.length}`),
-  );
+  console.log(chalk.green(`✓ Shared "${skillName}" with team "${config.team}"`));
+  console.log(chalk.dim(`  Total shared skills: ${config.sharedSkills.length}`));
 }
 
 async function collabStatus(): Promise<void> {
   const config = await loadCollabConfig();
   if (!config) {
-    console.log(
-      chalk.yellow("No team initialized. Run: skills collab init <team-name>"),
-    );
+    console.log(chalk.yellow("No team initialized. Run: skills collab init <team-name>"));
     return;
   }
 
@@ -199,9 +184,7 @@ async function collabStatus(): Promise<void> {
 
   console.log(chalk.bold("Members:"));
   if (config.members.length === 0) {
-    console.log(
-      chalk.dim("  No members yet. Use: skills collab add <username>"),
-    );
+    console.log(chalk.dim("  No members yet. Use: skills collab add <username>"));
   } else {
     for (const m of config.members) {
       console.log(`  ${chalk.green("●")} ${m}`);
@@ -211,9 +194,7 @@ async function collabStatus(): Promise<void> {
 
   console.log(chalk.bold("Shared Skills:"));
   if (config.sharedSkills.length === 0) {
-    console.log(
-      chalk.dim("  No skills shared. Use: skills collab share <skill>"),
-    );
+    console.log(chalk.dim("  No skills shared. Use: skills collab share <skill>"));
   } else {
     for (const s of config.sharedSkills) {
       console.log(`  ${chalk.cyan("◆")} ${s}`);
@@ -229,9 +210,7 @@ async function collabStatus(): Promise<void> {
 async function collabSync(): Promise<void> {
   const config = await loadCollabConfig();
   if (!config) {
-    console.error(
-      chalk.red("No team initialized. Run: skills collab init <team-name>"),
-    );
+    console.error(chalk.red("No team initialized. Run: skills collab init <team-name>"));
     process.exit(1);
   }
 

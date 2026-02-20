@@ -1,45 +1,34 @@
+import chalk from "chalk";
 /**
  * Context Budget Command
  * Select skills that fit within a token budget, ranked by project relevance.
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
 import { AGENTS } from "../agents.js";
 
 export function registerContextCommand(program: Command) {
   program
     .command("budget")
-    .description(
-      "Smart context budget manager — load only the most relevant skills",
-    )
-    .requiredOption(
-      "-b, --budget <tokens>",
-      "Token budget (e.g. 8000)",
-      parseInt,
-    )
+    .description("Smart context budget manager — load only the most relevant skills")
+    .requiredOption("-b, --budget <tokens>", "Token budget (e.g. 8000)", Number.parseInt)
     .option("-f, --format <format>", "Output format: text, xml, json", "text")
     .option(
       "--min-relevance <score>",
       "Minimum relevance score 0-100 (default: 10)",
-      parseInt,
+      Number.parseInt,
     )
-    .option(
-      "-p, --project <dir>",
-      "Project directory to analyze (default: cwd)",
-    )
-    .option(
-      "--list-only",
-      "Only list skills with scores, do not output content",
-    )
+    .option("-p, --project <dir>", "Project directory to analyze (default: cwd)")
+    .option("--list-only", "Only list skills with scores, do not output content")
     .action(async (options) => {
       try {
-        const { existsSync } = await import("fs");
-        const { readdir } = await import("fs/promises");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
-        const { buildContextPlan, formatContextXML, formatContextJSON } =
-          await import("../../core/context-budget.js");
+        const { existsSync } = await import("node:fs");
+        const { readdir } = await import("node:fs/promises");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
+        const { buildContextPlan, formatContextXML, formatContextJSON } = await import(
+          "../../core/context-budget.js"
+        );
 
         const home = homedir();
         const skillsDir = join(home, ".antigravity", "skills");
@@ -91,9 +80,7 @@ export function registerContextCommand(program: Command) {
           return;
         }
 
-        const spinner = ora(
-          `Analyzing ${allSkillDirs.length} skills against project...`,
-        ).start();
+        const spinner = ora(`Analyzing ${allSkillDirs.length} skills against project...`).start();
 
         const plan = await buildContextPlan(allSkillDirs, {
           budget: options.budget,
@@ -115,15 +102,13 @@ export function registerContextCommand(program: Command) {
         }
 
         // Text output
-        console.log(chalk.bold(`\n📊 Context Budget Plan\n`));
+        console.log(chalk.bold("\n📊 Context Budget Plan\n"));
         console.log(chalk.gray(`  Budget: ${options.budget} tokens`));
         console.log(chalk.gray(`  Skills found: ${allSkillDirs.length}`));
         console.log("");
 
         if (plan.loaded.length > 0) {
-          console.log(
-            chalk.green.bold(`  ✅ Loading ${plan.loaded.length} skill(s):`),
-          );
+          console.log(chalk.green.bold(`  ✅ Loading ${plan.loaded.length} skill(s):`));
           for (const skill of plan.loaded) {
             const bar = relevanceBar(skill.relevance);
             console.log(
@@ -135,9 +120,7 @@ export function registerContextCommand(program: Command) {
         }
 
         if (plan.skipped.length > 0) {
-          console.log(
-            chalk.yellow(`  ⏭️  Skipped ${plan.skipped.length} skill(s):`),
-          );
+          console.log(chalk.yellow(`  ⏭️  Skipped ${plan.skipped.length} skill(s):`));
           for (const skill of plan.skipped) {
             console.log(
               `    ${chalk.gray(`${skill.name} (${skill.tokens} tokens, ${skill.relevance}% — ${skill.reason})`)}`,
@@ -147,18 +130,12 @@ export function registerContextCommand(program: Command) {
         }
 
         console.log(chalk.bold("  Summary:"));
-        console.log(
-          `    Used: ${chalk.cyan(String(plan.totalTokens))} / ${options.budget} tokens`,
-        );
-        console.log(
-          `    Remaining: ${chalk.green(String(plan.budgetRemaining))} tokens`,
-        );
+        console.log(`    Used: ${chalk.cyan(String(plan.totalTokens))} / ${options.budget} tokens`);
+        console.log(`    Remaining: ${chalk.green(String(plan.budgetRemaining))} tokens`);
         console.log("");
 
         if (!options.listOnly && plan.loaded.length > 0) {
-          console.log(
-            chalk.gray("  Tip: Use --format xml to get agent-ready output.\n"),
-          );
+          console.log(chalk.gray("  Tip: Use --format xml to get agent-ready output.\n"));
         }
       } catch (error: any) {
         console.error(chalk.red("Error:"), error.message || error);
@@ -170,7 +147,6 @@ export function registerContextCommand(program: Command) {
 function relevanceBar(score: number): string {
   const filled = Math.round(score / 5);
   const empty = 20 - filled;
-  const color =
-    score >= 70 ? chalk.green : score >= 40 ? chalk.yellow : chalk.red;
+  const color = score >= 70 ? chalk.green : score >= 40 ? chalk.yellow : chalk.red;
   return color("█".repeat(filled) + "░".repeat(empty));
 }

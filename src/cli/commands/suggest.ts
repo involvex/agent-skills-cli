@@ -5,17 +5,16 @@
  */
 
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
+import { fetchSkillsForCLI } from "../../core/skillsdb.js";
 import {
+  type SuggestOptions,
+  type SuggestedSkill,
   analyzeProject,
   buildSearchKeywords,
   scoreSkill,
-  type ProjectAnalysis,
-  type SuggestOptions,
-  type SuggestedSkill,
 } from "../../core/suggest.js";
-import { fetchSkillsForCLI, searchSkillsDB } from "../../core/skillsdb.js";
 
 /**
  * Register the suggest command with commander
@@ -35,8 +34,8 @@ export function registerSuggestCommand(program: Command): void {
     .action(async (options: any) => {
       try {
         await suggestCommand({
-          limit: parseInt(options.limit) || 10,
-          minScore: parseInt(options.minScore) || 20,
+          limit: Number.parseInt(options.limit) || 10,
+          minScore: Number.parseInt(options.minScore) || 20,
           category: options.category,
           task: options.task,
           verbose: options.verbose || false,
@@ -61,9 +60,7 @@ async function suggestCommand(options: SuggestOptions): Promise<void> {
   const analysis = await analyzeProject(projectPath);
 
   if (analysis.languages.length === 0 && analysis.frameworks.length === 0) {
-    spinner.warn(
-      "Could not detect project tech stack. Try running from a project directory.",
-    );
+    spinner.warn("Could not detect project tech stack. Try running from a project directory.");
     return;
   }
 
@@ -77,29 +74,19 @@ async function suggestCommand(options: SuggestOptions): Promise<void> {
   if (!options.json) {
     console.log(chalk.bold("📊 Detected Tech Stack:"));
     if (analysis.languages.length > 0) {
-      console.log(
-        `  ${chalk.dim("Languages:")}  ${analysis.languages.join(", ")}`,
-      );
+      console.log(`  ${chalk.dim("Languages:")}  ${analysis.languages.join(", ")}`);
     }
     if (analysis.frameworks.length > 0) {
-      console.log(
-        `  ${chalk.dim("Frameworks:")} ${analysis.frameworks.join(", ")}`,
-      );
+      console.log(`  ${chalk.dim("Frameworks:")} ${analysis.frameworks.join(", ")}`);
     }
     if (analysis.libraries.length > 0) {
-      console.log(
-        `  ${chalk.dim("Libraries:")}  ${analysis.libraries.join(", ")}`,
-      );
+      console.log(`  ${chalk.dim("Libraries:")}  ${analysis.libraries.join(", ")}`);
     }
     if (analysis.testTools.length > 0) {
-      console.log(
-        `  ${chalk.dim("Testing:")}    ${analysis.testTools.join(", ")}`,
-      );
+      console.log(`  ${chalk.dim("Testing:")}    ${analysis.testTools.join(", ")}`);
     }
     if (analysis.buildTools.length > 0) {
-      console.log(
-        `  ${chalk.dim("Build:")}      ${analysis.buildTools.join(", ")}`,
-      );
+      console.log(`  ${chalk.dim("Build:")}      ${analysis.buildTools.join(", ")}`);
     }
     console.log("");
   }
@@ -132,9 +119,7 @@ async function suggestCommand(options: SuggestOptions): Promise<void> {
   }
 
   if (allSkills.length === 0) {
-    spinner2.warn(
-      "No skills found matching your project. Try using --task to search by task.",
-    );
+    spinner2.warn("No skills found matching your project. Try using --task to search by task.");
     return;
   }
 
@@ -176,31 +161,20 @@ async function suggestCommand(options: SuggestOptions): Promise<void> {
 
   if (suggestions.length === 0) {
     console.log(
-      chalk.yellow(
-        "No skills matched with sufficient confidence. Try lowering --min-score.",
-      ),
+      chalk.yellow("No skills matched with sufficient confidence. Try lowering --min-score."),
     );
     return;
   }
 
-  const stackLabel = [...analysis.frameworks, ...analysis.languages]
-    .slice(0, 3)
-    .join(" + ");
-  console.log(
-    chalk.bold(`🎯 Skill Suggestions for your project (${stackLabel})`),
-  );
+  const stackLabel = [...analysis.frameworks, ...analysis.languages].slice(0, 3).join(" + ");
+  console.log(chalk.bold(`🎯 Skill Suggestions for your project (${stackLabel})`));
   console.log("");
 
   for (const suggestion of suggestions) {
     const scoreColor =
-      suggestion.score >= 80
-        ? chalk.green
-        : suggestion.score >= 50
-          ? chalk.yellow
-          : chalk.dim;
+      suggestion.score >= 80 ? chalk.green : suggestion.score >= 50 ? chalk.yellow : chalk.dim;
 
-    const starsStr =
-      suggestion.stars > 0 ? chalk.dim(` ★${suggestion.stars}`) : "";
+    const starsStr = suggestion.stars > 0 ? chalk.dim(` ★${suggestion.stars}`) : "";
     const scoreStr = scoreColor(`${suggestion.score}%`.padStart(4));
 
     console.log(
@@ -221,5 +195,5 @@ async function suggestCommand(options: SuggestOptions): Promise<void> {
 
 function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
-  return str.slice(0, maxLen - 1) + "…";
+  return `${str.slice(0, maxLen - 1)}…`;
 }

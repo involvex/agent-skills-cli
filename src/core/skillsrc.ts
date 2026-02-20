@@ -11,10 +11,10 @@
  * 4. ~/.skillsrc.json
  */
 
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -85,9 +85,7 @@ async function parseConfigFile(filePath: string): Promise<SkillsRC | null> {
 function parseSimpleYaml(content: string): SkillsRC | null {
   try {
     const result: SkillsRC = {};
-    const lines = content
-      .split("\n")
-      .filter((l) => l.trim() && !l.trim().startsWith("#"));
+    const lines = content.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
 
     let currentSection: string | null = null;
     let currentSource: Partial<SkillsRCSource> | null = null;
@@ -111,7 +109,7 @@ function parseSimpleYaml(content: string): SkillsRC | null {
       // Array item (- prefix)
       if (trimmed.startsWith("- ") && currentSection === "sources") {
         if (currentSource && Object.keys(currentSource).length > 0) {
-          result.sources!.push(currentSource as SkillsRCSource);
+          result.sources?.push(currentSource as SkillsRCSource);
         }
         currentSource = {};
         const kv = trimmed.slice(2).trim();
@@ -191,35 +189,22 @@ export async function loadSkillsRC(cwd?: string): Promise<SkillsRC | null> {
 /**
  * Get all configured sources from .skillsrc, optionally filtered by type
  */
-export function getSourcesByType(
-  config: SkillsRC,
-  type: "git" | "npm",
-): SkillsRCSource[] {
+export function getSourcesByType(config: SkillsRC, type: "git" | "npm"): SkillsRCSource[] {
   return (config.sources || []).filter((s) => s.type === type);
 }
 
 /**
  * Get the npm registry URL for a given scope from .skillsrc
  */
-export function getRegistryForScope(
-  config: SkillsRC,
-  scope: string,
-): string | undefined {
-  const source = (config.sources || []).find(
-    (s) => s.type === "npm" && s.scope === scope,
-  );
+export function getRegistryForScope(config: SkillsRC, scope: string): string | undefined {
+  const source = (config.sources || []).find((s) => s.type === "npm" && s.scope === scope);
   return source?.registry;
 }
 
 /**
  * Get the auth env var for a given source URL
  */
-export function getAuthEnvVar(
-  config: SkillsRC,
-  url: string,
-): string | undefined {
-  const source = (config.sources || []).find(
-    (s) => s.url && url.includes(s.url),
-  );
+export function getAuthEnvVar(config: SkillsRC, url: string): string | undefined {
+  const source = (config.sources || []).find((s) => s.url && url.includes(s.url));
   return source?.envVar;
 }

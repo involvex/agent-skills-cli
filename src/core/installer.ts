@@ -3,10 +3,11 @@
  * Handles symlink-based installation of skills to agent directories
  */
 
-import { homedir } from "os";
-import { join, dirname, relative } from "path";
-import { mkdir, cp, rm, symlink, lstat, readlink } from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync } from "node:fs";
+import { cp, lstat, mkdir, rm, symlink } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import { ComponentType, type InstallResult } from "../types/index.js";
 
 /**
  * Agent configuration interface
@@ -86,10 +87,7 @@ export async function isSymlink(path: string): Promise<boolean> {
 /**
  * Create a symlink, falling back to copy if symlinks fail (Windows)
  */
-async function createSymlinkOrCopy(
-  source: string,
-  target: string,
-): Promise<"symlink" | "copy"> {
+async function createSymlinkOrCopy(source: string, target: string): Promise<"symlink" | "copy"> {
   try {
     // Remove existing target if any
     if (existsSync(target)) {
@@ -213,4 +211,144 @@ export async function getSkillInstallMethod(
   }
 
   return "copy";
+}
+
+// ── Unified Component Installation ─────────────────────────────────────────────
+
+/**
+ * Get the canonical directory for a component type
+ * - Global: ~/.agent/<type>s/
+ * - Project: .agent/<type>s/
+ */
+export function getCanonicalComponentDir(
+  componentType: ComponentType,
+  global: boolean,
+  cwd: string,
+): string {
+  const base = global ? join(homedir(), ".agent") : join(cwd, ".agent");
+  return join(base, `${componentType}s`); // skills, agents, mcp, hooks
+}
+
+/**
+ * Get the agent-specific component path
+ */
+export function getAgentComponentPath(
+  agentConfig: AgentConfig,
+  componentType: ComponentType,
+  global: boolean,
+  cwd: string,
+): string {
+  const basePath = global ? agentConfig.globalDir : join(cwd, agentConfig.projectDir);
+  // Map component type to agent-specific subdirectory
+  const typeMap: Record<ComponentType, string> = {
+    [ComponentType.SKILL]: "skills",
+    [ComponentType.AGENT]: "agents",
+    [ComponentType.MCP]: "mcp",
+    [ComponentType.HOOK]: "hooks",
+  };
+  // For skills, use the existing pattern
+  if (componentType === ComponentType.SKILL) {
+    return basePath;
+  }
+  // For other components, navigate to parent and add component directory
+  return join(dirname(basePath), typeMap[componentType]);
+}
+
+/**
+ * Install a component with symlinks to each agent
+ * Extends the skill installation pattern to support multiple component types
+ *
+ * @param sourcePath - Path to downloaded component (temp directory)
+ * @param componentName - Name of the component
+ * @param componentType - Type of component (skill, agent, mcp, hook)
+ * @param agentConfigs - Map of all available agent configs
+ * @param targetAgents - List of agent names to install to
+ * @param options - Install options
+ */
+export async function installComponentWithSymlinks(
+  sourcePath: string,
+  componentName: string,
+  componentType: ComponentType,
+  agentConfigs: Record<string, AgentConfig>,
+  targetAgents: string[],
+  options: InstallOptions,
+): Promise<InstallResult> {
+  const canonicalDir = getCanonicalComponentDir(componentType, options.global, options.cwd);
+  const canonicalPath = join(canonicalDir, componentName);
+
+  // 1. Create canonical directory and copy component
+  await mkdir(canonicalDir, { recursive: true });
+
+  // Remove existing canonical copy if any
+  if (existsSync(canonicalPath)) {
+    await rm(canonicalPath, { recursive: true, force: true });
+  }
+
+  // Copy to canonical location
+  await cp(sourcePath, canonicalPath, { recursive: true });
+
+  // 2. Create symlinks/copies for each agent
+  const installations: InstallResult["installations"] = [];
+
+  for (const agentName of targetAgents) {
+    const agentConfig = agentConfigs[agentName];
+    if (!agentConfig) continue;
+
+    const agentPath = getAgentComponentPath(
+      agentConfig,
+      componentType,
+      options.global,
+      options.cwd,
+    );
+    const targetPath = join(agentPath, componentName);
+
+    const method = await createSymlinkOrCopy(canonicalPath, targetPath);
+
+    installations.push({
+      agent: agentName,
+      method,
+      path: targetPath,
+    });
+  }
+
+  return {
+    success: true,
+    installations,
+  };
+}
+
+/**
+ * Remove a component from all its installed locations
+ */
+export async function removeComponentInstallation(
+  componentName: string,
+  componentType: ComponentType,
+  agentConfigs: Record<string, AgentConfig>,
+  agents: string[],
+  options: { global: boolean; cwd: string },
+): Promise<void> {
+  // Remove from each agent directory
+  for (const agentName of agents) {
+    const agentConfig = agentConfigs[agentName];
+    if (!agentConfig) continue;
+
+    const agentPath = getAgentComponentPath(
+      agentConfig,
+      componentType,
+      options.global,
+      options.cwd,
+    );
+    const targetPath = join(agentPath, componentName);
+
+    if (existsSync(targetPath)) {
+      await rm(targetPath, { recursive: true, force: true });
+    }
+  }
+
+  // Remove canonical copy
+  const canonicalDir = getCanonicalComponentDir(componentType, options.global, options.cwd);
+  const canonicalPath = join(canonicalDir, componentName);
+  if (existsSync(canonicalPath)) {
+    await rm(canonicalPath, { recursive: true, force: true });
+  }
 }

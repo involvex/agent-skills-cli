@@ -4,11 +4,11 @@
  * (SkillKit calls this "workflow" — we call it "trigger")
  */
 
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
+import type { Command } from "commander";
 
 interface TriggerConfig {
   version: string;
@@ -38,18 +38,9 @@ export function registerTriggerCommand(program: Command): void {
   trigger
     .command("add <name>")
     .description("Add a trigger rule")
-    .requiredOption(
-      "-e, --event <event>",
-      "Event type: file-change, commit, branch, save",
-    )
-    .requiredOption(
-      "-p, --pattern <pattern>",
-      "Pattern to match (glob or regex)",
-    )
-    .requiredOption(
-      "-a, --action <action>",
-      "Action: run-skill, validate, audit, notify",
-    )
+    .requiredOption("-e, --event <event>", "Event type: file-change, commit, branch, save")
+    .requiredOption("-p, --pattern <pattern>", "Pattern to match (glob or regex)")
+    .requiredOption("-a, --action <action>", "Action: run-skill, validate, audit, notify")
     .option("-s, --skill <skill>", "Skill to run (for run-skill action)")
     .action(async (name: string, options: any) => {
       try {
@@ -142,9 +133,7 @@ async function triggerAdd(name: string, options: any): Promise<void> {
 
   await saveTriggers(config);
   console.log(chalk.green(`✓ Added trigger: ${chalk.cyan(name)}`));
-  console.log(
-    chalk.dim(`  ${options.event} → ${options.pattern} → ${options.action}`),
-  );
+  console.log(chalk.dim(`  ${options.event} → ${options.pattern} → ${options.action}`));
 }
 
 async function triggerList(): Promise<void> {
@@ -153,9 +142,7 @@ async function triggerList(): Promise<void> {
   if (config.triggers.length === 0) {
     console.log(chalk.dim("No triggers configured."));
     console.log(
-      chalk.dim(
-        '  Add one: skills trigger add <name> -e file-change -p "*.ts" -a validate',
-      ),
+      chalk.dim('  Add one: skills trigger add <name> -e file-change -p "*.ts" -a validate'),
     );
     return;
   }
@@ -169,9 +156,7 @@ async function triggerList(): Promise<void> {
     console.log(`  ${status} ${chalk.bold(t.name)}`);
     console.log(`    ${chalk.dim("Event:")}   ${t.event}`);
     console.log(`    ${chalk.dim("Pattern:")} ${t.pattern}`);
-    console.log(
-      `    ${chalk.dim("Action:")}  ${t.action}${t.skill ? ` (${t.skill})` : ""}`,
-    );
+    console.log(`    ${chalk.dim("Action:")}  ${t.action}${t.skill ? ` (${t.skill})` : ""}`);
     console.log("");
   }
 }
@@ -185,9 +170,7 @@ async function triggerToggle(name: string, enabled: boolean): Promise<void> {
   }
   trigger.enabled = enabled;
   await saveTriggers(config);
-  console.log(
-    chalk.green(`✓ Trigger "${name}" ${enabled ? "enabled" : "disabled"}`),
-  );
+  console.log(chalk.green(`✓ Trigger "${name}" ${enabled ? "enabled" : "disabled"}`));
 }
 
 async function triggerRemove(name: string): Promise<void> {

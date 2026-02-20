@@ -4,12 +4,12 @@
  * (SkillKit calls this "rules" — we call it "rule")
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
-import { homedir } from "os";
+import type { Command } from "commander";
 
 interface CodingRule {
   name: string;
@@ -34,10 +34,7 @@ const PROJECT_RULES_FILE = ".skills-rules.json";
  * Register the rule command
  */
 export function registerRuleCommand(program: Command): void {
-  const rule = program
-    .command("rule")
-    .alias("rl")
-    .description("Manage always-on coding rules");
+  const rule = program.command("rule").alias("rl").description("Manage always-on coding rules");
 
   rule
     .command("add <name>")
@@ -158,17 +155,13 @@ async function ruleAdd(name: string, options: any): Promise<void> {
   });
 
   await saveRules(store, isGlobal);
-  console.log(
-    chalk.green(
-      `✓ Added ${isGlobal ? "global" : "project"} rule: ${chalk.cyan(name)}`,
-    ),
-  );
+  console.log(chalk.green(`✓ Added ${isGlobal ? "global" : "project"} rule: ${chalk.cyan(name)}`));
 }
 
 async function ruleList(options: any): Promise<void> {
   const showGlobal = !options.project;
   const showProject = !options.global;
-  let allRules: CodingRule[] = [];
+  const allRules: CodingRule[] = [];
 
   if (showGlobal) {
     const global = await loadRules(true);
@@ -182,9 +175,7 @@ async function ruleList(options: any): Promise<void> {
   if (allRules.length === 0) {
     console.log(chalk.dim("No rules configured."));
     console.log(
-      chalk.dim(
-        '  Add one: skills rule add "no-any" -d "Never use TypeScript any type"',
-      ),
+      chalk.dim('  Add one: skills rule add "no-any" -d "Never use TypeScript any type"'),
     );
     return;
   }
@@ -204,19 +195,13 @@ async function ruleList(options: any): Promise<void> {
     for (const r of rules) {
       const status = r.enabled ? chalk.green("●") : chalk.red("○");
       const scope = r.scope === "global" ? chalk.dim(" [global]") : "";
-      console.log(
-        `    ${status} ${r.name}${scope} — ${chalk.dim(r.description)}`,
-      );
+      console.log(`    ${status} ${r.name}${scope} — ${chalk.dim(r.description)}`);
     }
     console.log("");
   }
 }
 
-async function ruleToggle(
-  name: string,
-  enabled: boolean,
-  global?: boolean,
-): Promise<void> {
+async function ruleToggle(name: string, enabled: boolean, global?: boolean): Promise<void> {
   const scopes: boolean[] = global !== undefined ? [!!global] : [false, true];
   for (const isGlobal of scopes) {
     const store = await loadRules(isGlobal);
@@ -224,9 +209,7 @@ async function ruleToggle(
     if (rule) {
       rule.enabled = enabled;
       await saveRules(store, isGlobal);
-      console.log(
-        chalk.green(`✓ Rule "${name}" ${enabled ? "enabled" : "disabled"}`),
-      );
+      console.log(chalk.green(`✓ Rule "${name}" ${enabled ? "enabled" : "disabled"}`));
       return;
     }
   }
@@ -275,7 +258,5 @@ async function ruleExport(outputDir: string): Promise<void> {
   const outDir = resolve(outputDir, "coding-rules");
   await mkdir(outDir, { recursive: true });
   await writeFile(join(outDir, "SKILL.md"), lines.join("\n"));
-  console.log(
-    chalk.green(`✓ Exported ${allRules.length} rules to ${outDir}/SKILL.md`),
-  );
+  console.log(chalk.green(`✓ Exported ${allRules.length} rules to ${outDir}/SKILL.md`));
 }

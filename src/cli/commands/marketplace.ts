@@ -1,26 +1,25 @@
+import chalk from "chalk";
 /**
  * Marketplace commands — market-list, market-search, market-install, market-uninstall,
  * market-installed, market-sources, market-add-source, market-update-check, assets
  */
-import { Command } from "commander";
-import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
 import {
-  listMarketplaceSkills,
-  searchSkills,
-  installSkill,
-  uninstallSkill,
-  getInstalledSkills,
-  listMarketplaces,
   addMarketplace,
   checkUpdates,
-  installFromGitHubUrl,
-  getSkillByScoped,
-  getSkillBaseUrl,
-  fetchAssetManifest,
-  getAssetUrl,
   fetchAsset,
+  fetchAssetManifest,
   fetchSkillsForCLI,
+  getAssetUrl,
+  getInstalledSkills,
+  getSkillBaseUrl,
+  getSkillByScoped,
+  installFromGitHubUrl,
+  listMarketplaceSkills,
+  listMarketplaces,
+  searchSkills,
+  uninstallSkill,
 } from "../../core/index.js";
 
 export function registerMarketplaceCommands(program: Command) {
@@ -74,7 +73,7 @@ export function registerMarketplaceCommands(program: Command) {
             for (const entry of manifest) {
               const cat = entry.category || "other";
               if (!byCategory.has(cat)) byCategory.set(cat, []);
-              byCategory.get(cat)!.push(entry);
+              byCategory.get(cat)?.push(entry);
             }
 
             for (const [category, entries] of byCategory) {
@@ -155,10 +154,10 @@ export function registerMarketplaceCommands(program: Command) {
             if (!bySource.has(sourceId)) {
               bySource.set(sourceId, []);
             }
-            bySource.get(sourceId)!.push(skill);
+            bySource.get(sourceId)?.push(skill);
           }
 
-          for (const [sourceId, sourceSkills] of bySource) {
+          for (const [_sourceId, sourceSkills] of bySource) {
             const source = sourceSkills[0].source;
             console.log(chalk.bold.cyan(`\n📦 ${source.name}`));
             console.log(chalk.gray(`   ${source.owner}/${source.repo}`));
@@ -172,24 +171,20 @@ export function registerMarketplaceCommands(program: Command) {
               if (skill.description) {
                 const desc =
                   skill.description.length > 60
-                    ? skill.description.slice(0, 60) + "..."
+                    ? `${skill.description.slice(0, 60)}...`
                     : skill.description;
                 console.log(chalk.gray(`     ${desc}`));
               }
             }
           }
 
-          console.log(
-            chalk.gray(
-              `\nTotal: ${skills.length} skills from ${bySource.size} sources`,
-            ),
-          );
+          console.log(chalk.gray(`\nTotal: ${skills.length} skills from ${bySource.size} sources`));
         } else {
           // Database mode (primary): fetch from our API
           console.log(chalk.bold("\n🌐 Skills Marketplace\n"));
 
-          const limit = parseInt(options.limit) || 50;
-          const page = parseInt(options.page) || 1;
+          const limit = Number.parseInt(options.limit) || 50;
+          const page = Number.parseInt(options.page) || 1;
 
           let result: { skills: any[]; total: number; hasNext?: boolean };
           try {
@@ -218,20 +213,16 @@ export function registerMarketplaceCommands(program: Command) {
             if (skill.description) {
               const desc =
                 skill.description.length > 55
-                  ? skill.description.slice(0, 55) + "..."
+                  ? `${skill.description.slice(0, 55)}...`
                   : skill.description;
               console.log(chalk.gray(`    ${desc}`));
             }
             console.log(chalk.dim(`    by ${skill.author || "unknown"}`));
           }
 
-          console.log(
-            chalk.gray(`\nTotal: ${result.total.toLocaleString()} skills`),
-          );
+          console.log(chalk.gray(`\nTotal: ${result.total.toLocaleString()} skills`));
           if (result.hasNext) {
-            console.log(
-              chalk.gray(`Next page: skills market-list --page ${page + 1}`),
-            );
+            console.log(chalk.gray(`Next page: skills market-list --page ${page + 1}`));
           }
         }
 
@@ -252,7 +243,7 @@ export function registerMarketplaceCommands(program: Command) {
       try {
         console.log(chalk.bold(`\n🔍 Searching for "${query}"...\n`));
 
-        const limit = parseInt(options.limit) || 20;
+        const limit = Number.parseInt(options.limit) || 20;
 
         let result: { skills: any[]; total: number } | null = null;
 
@@ -308,15 +299,12 @@ export function registerMarketplaceCommands(program: Command) {
     .alias("mi")
     .description("Install a skill (alias for: skills install)")
     .action(async (name) => {
-      console.log(
-        chalk.gray("Tip: Use `skills install <id-or-name>` directly\n"),
-      );
-      const { execSync } = await import("child_process");
+      console.log(chalk.gray("Tip: Use `skills install <id-or-name>` directly\n"));
+      const { execSync } = await import("node:child_process");
       try {
-        execSync(
-          `"${process.argv[0]}" "${process.argv[1]}" install "${name}"`,
-          { stdio: "inherit" },
-        );
+        execSync(`"${process.argv[0]}" "${process.argv[1]}" install "${name}"`, {
+          stdio: "inherit",
+        });
       } catch {}
     });
 
@@ -331,12 +319,10 @@ export function registerMarketplaceCommands(program: Command) {
 
         // Convert SkillsMP URL to GitHub URL
         if (url.includes("skillsmp.com/skills/")) {
-          console.log(chalk.bold(`\n📦 Fetching skill info from SkillsMP...`));
+          console.log(chalk.bold("\n📦 Fetching skill info from SkillsMP..."));
 
           const skillId = url.split("/skills/").pop()?.replace(/\/$/, "");
-          const response = await fetch(
-            `https://skillsmp.com/api/skills/${skillId}`,
-          );
+          const response = await fetch(`https://skillsmp.com/api/skills/${skillId}`);
           if (!response.ok) {
             throw new Error("Could not find skill on SkillsMP");
           }
@@ -345,24 +331,20 @@ export function registerMarketplaceCommands(program: Command) {
             skill: { githubUrl: string; name: string; author: string };
           };
           githubUrl = data.skill.githubUrl;
-          console.log(
-            chalk.gray(`Found: ${data.skill.name} by ${data.skill.author}\n`),
-          );
+          console.log(chalk.gray(`Found: ${data.skill.name} by ${data.skill.author}\n`));
         }
 
         // Validate GitHub URL
         if (!githubUrl.includes("github.com")) {
           console.log(
-            chalk.red(
-              "Invalid URL. Please provide a GitHub URL or SkillsMP skill page URL.",
-            ),
+            chalk.red("Invalid URL. Please provide a GitHub URL or SkillsMP skill page URL."),
           );
           return;
         }
 
         console.log(chalk.gray(`Installing from: ${githubUrl}\n`));
 
-        const homedir = (await import("os")).homedir();
+        const homedir = (await import("node:os")).homedir();
         const skillsDir = `${homedir}/.antigravity/skills`;
 
         const installed = await installFromGitHubUrl(githubUrl, skillsDir);
@@ -371,10 +353,7 @@ export function registerMarketplaceCommands(program: Command) {
         console.log(chalk.gray(`  Path: ${installed.path}`));
         console.log("");
       } catch (error: any) {
-        console.error(
-          chalk.red("Error installing skill:"),
-          error.message || error,
-        );
+        console.error(chalk.red("Error installing skill:"), error.message || error);
         process.exit(1);
       }
     });
@@ -405,13 +384,11 @@ export function registerMarketplaceCommands(program: Command) {
 
         if (installed.length === 0) {
           console.log(chalk.yellow("\nNo marketplace skills installed."));
-          console.log(
-            chalk.gray("Use: skills market-install <name> to install\n"),
-          );
+          console.log(chalk.gray("Use: skills market-install <name> to install\n"));
           return;
         }
 
-        console.log(chalk.bold(`\nInstalled marketplace skills:\n`));
+        console.log(chalk.bold("\nInstalled marketplace skills:\n"));
 
         for (const skill of installed) {
           console.log(chalk.cyan(`  ${skill.name}`));
@@ -439,10 +416,10 @@ export function registerMarketplaceCommands(program: Command) {
       try {
         // Show SkillsMP as primary
         console.log(chalk.bold("\n🌐 Primary Marketplace:\n"));
-        console.log(chalk.cyan(`  SkillsMP`) + chalk.green(" ✓"));
-        console.log(chalk.gray(`    URL: https://skillsmp.com`));
-        console.log(chalk.gray(`    Skills: 40,000+`));
-        console.log(chalk.gray(`    The largest Agent Skills marketplace`));
+        console.log(chalk.cyan("  SkillsMP") + chalk.green(" ✓"));
+        console.log(chalk.gray("    URL: https://skillsmp.com"));
+        console.log(chalk.gray("    Skills: 40,000+"));
+        console.log(chalk.gray("    The largest Agent Skills marketplace"));
         console.log("");
 
         // Show legacy sources
@@ -509,9 +486,7 @@ export function registerMarketplaceCommands(program: Command) {
         const updates = await checkUpdates();
 
         if (updates.length === 0) {
-          console.log(
-            chalk.yellow("No installed marketplace skills to check."),
-          );
+          console.log(chalk.yellow("No installed marketplace skills to check."));
           return;
         }
 
@@ -520,24 +495,16 @@ export function registerMarketplaceCommands(program: Command) {
         if (hasUpdates.length === 0) {
           console.log(chalk.green("All skills are up to date! ✓"));
         } else {
-          console.log(
-            chalk.yellow(
-              `${hasUpdates.length} skill(s) have updates available:\n`,
-            ),
-          );
+          console.log(chalk.yellow(`${hasUpdates.length} skill(s) have updates available:\n`));
 
           for (const update of hasUpdates) {
             console.log(chalk.cyan(`  ${update.skill.name}`));
-            console.log(
-              chalk.gray(`    Current: ${update.currentVersion || "unknown"}`),
-            );
+            console.log(chalk.gray(`    Current: ${update.currentVersion || "unknown"}`));
             console.log(chalk.green(`    Latest:  ${update.latestVersion}`));
             console.log("");
           }
 
-          console.log(
-            chalk.gray("To update, uninstall and reinstall the skill."),
-          );
+          console.log(chalk.gray("To update, uninstall and reinstall the skill."));
         }
       } catch (error) {
         console.error(chalk.red("Error checking updates:"), error);

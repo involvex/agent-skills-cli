@@ -3,9 +3,9 @@
  * Analyzes package.json and project files to recommend matching skills from our 67K+ DB
  */
 
-import { readFile } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export interface ProjectAnalysis {
   languages: string[];
@@ -108,9 +108,7 @@ const BUILD_TOOL_PATTERNS: Record<string, string[]> = {
 /**
  * Analyze a project directory to detect tech stack
  */
-export async function analyzeProject(
-  projectPath: string,
-): Promise<ProjectAnalysis> {
+export async function analyzeProject(projectPath: string): Promise<ProjectAnalysis> {
   const analysis: ProjectAnalysis = {
     languages: [],
     frameworks: [],
@@ -135,10 +133,7 @@ export async function analyzeProject(
       const depNames = Object.keys(allDeps || {});
 
       // Detect language
-      if (
-        depNames.includes("typescript") ||
-        existsSync(join(projectPath, "tsconfig.json"))
-      ) {
+      if (depNames.includes("typescript") || existsSync(join(projectPath, "tsconfig.json"))) {
         analysis.languages.push("typescript");
       }
       analysis.languages.push("javascript");
@@ -193,45 +188,28 @@ export async function analyzeProject(
   }
 
   // Check for Java projects
-  if (
-    existsSync(join(projectPath, "pom.xml")) ||
-    existsSync(join(projectPath, "build.gradle"))
-  ) {
+  if (existsSync(join(projectPath, "pom.xml")) || existsSync(join(projectPath, "build.gradle"))) {
     analysis.languages.push("java");
   }
 
   // Build categories from detected stack
-  if (
-    analysis.frameworks.some((f) =>
-      ["react", "vue", "svelte", "angular"].includes(f),
-    )
-  ) {
+  if (analysis.frameworks.some((f) => ["react", "vue", "svelte", "angular"].includes(f))) {
     analysis.categories.push("frontend");
   }
   if (
     analysis.frameworks.some((f) =>
-      ["express", "fastify", "nest.js", "django", "flask", "fastapi"].includes(
-        f,
-      ),
+      ["express", "fastify", "nest.js", "django", "flask", "fastapi"].includes(f),
     )
   ) {
     analysis.categories.push("backend");
   }
-  if (
-    analysis.frameworks.some((f) =>
-      ["next.js", "nuxt", "remix", "astro"].includes(f),
-    )
-  ) {
+  if (analysis.frameworks.some((f) => ["next.js", "nuxt", "remix", "astro"].includes(f))) {
     analysis.categories.push("fullstack");
   }
   if (analysis.testTools.length > 0) {
     analysis.categories.push("testing");
   }
-  if (
-    analysis.libraries.some((l) =>
-      ["prisma", "drizzle", "typeorm", "mongoose"].includes(l),
-    )
-  ) {
+  if (analysis.libraries.some((l) => ["prisma", "drizzle", "typeorm", "mongoose"].includes(l))) {
     analysis.categories.push("database");
   }
 
@@ -241,10 +219,7 @@ export async function analyzeProject(
 /**
  * Build search keywords from project analysis
  */
-export function buildSearchKeywords(
-  analysis: ProjectAnalysis,
-  task?: string,
-): string[] {
+export function buildSearchKeywords(analysis: ProjectAnalysis, task?: string): string[] {
   const keywords: string[] = [];
 
   // Add task-specific keywords first (highest priority)

@@ -4,14 +4,14 @@
  * (SkillKit calls this "mesh" — we call it "grid")
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import { homedir, hostname, networkInterfaces } from "node:os";
+import { join } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { join } from "path";
-import { homedir, hostname, networkInterfaces } from "os";
-import { createServer } from "http";
 import { listInstalledSkills } from "../../core/skill-lock.js";
 
 interface GridOptions {
@@ -73,7 +73,7 @@ export function registerGridCommand(program: Command): void {
 }
 
 async function gridServe(options: GridOptions): Promise<void> {
-  const port = parseInt(options.port || String(DEFAULT_PORT));
+  const port = Number.parseInt(options.port || String(DEFAULT_PORT));
   const host = options.host || "0.0.0.0";
 
   const spinner = ora("Starting grid server...").start();
@@ -115,9 +115,7 @@ async function gridServe(options: GridOptions): Promise<void> {
 
     const localIP = getLocalIP();
     console.log(chalk.bold("🌐 Grid Node Active"));
-    console.log(
-      `  ${chalk.dim("Address:")}  ${chalk.cyan(`http://${localIP}:${port}`)}`,
-    );
+    console.log(`  ${chalk.dim("Address:")}  ${chalk.cyan(`http://${localIP}:${port}`)}`);
     console.log(`  ${chalk.dim("Skills:")}   ${installed.length} available`);
     console.log(`  ${chalk.dim("Host:")}     ${hostname()}`);
     console.log("");
@@ -150,7 +148,7 @@ async function gridServe(options: GridOptions): Promise<void> {
 }
 
 async function gridDiscover(options: GridOptions): Promise<void> {
-  const port = parseInt(options.port || String(DEFAULT_PORT));
+  const port = Number.parseInt(options.port || String(DEFAULT_PORT));
   const spinner = ora("Scanning local network...").start();
 
   const localIP = getLocalIP();
@@ -175,14 +173,12 @@ async function gridDiscover(options: GridOptions): Promise<void> {
   // Use Promise.allSettled for timeout handling
   await Promise.allSettled(scanPromises);
 
-  spinner.succeed(`Scan complete`);
+  spinner.succeed("Scan complete");
   console.log("");
 
   if (discovered.length === 0) {
     console.log(chalk.dim("No grid nodes found on the local network"));
-    console.log(
-      chalk.dim(`  Make sure peers run: ${chalk.white("skills grid serve")}`),
-    );
+    console.log(chalk.dim(`  Make sure peers run: ${chalk.white("skills grid serve")}`));
   } else {
     console.log(chalk.bold(`📡 Found ${discovered.length} grid node(s)`));
     console.log("");
@@ -193,9 +189,7 @@ async function gridDiscover(options: GridOptions): Promise<void> {
       );
       if (node.skills) {
         for (const skill of node.skills.slice(0, 5)) {
-          console.log(
-            `    ${chalk.cyan("◆")} ${skill.scopedName || skill.name}`,
-          );
+          console.log(`    ${chalk.cyan("◆")} ${skill.scopedName || skill.name}`);
         }
         if (node.skills.length > 5) {
           console.log(chalk.dim(`    ... and ${node.skills.length - 5} more`));

@@ -3,8 +3,8 @@
  * Real-time fuzzy search with keyboard navigation
  */
 
+import * as readline from "node:readline";
 import chalk from "chalk";
-import * as readline from "readline";
 
 const API_URL = "https://agentskills.in/api/skills";
 
@@ -34,9 +34,7 @@ interface SearchState {
  * Run FZF-style interactive search
  * Returns the selected skill or null if cancelled
  */
-export async function fzfSearch(
-  initialQuery = "",
-): Promise<SearchResult | null> {
+export async function fzfSearch(initialQuery = ""): Promise<SearchResult | null> {
   const state: SearchState = {
     query: initialQuery,
     results: [],
@@ -65,9 +63,7 @@ export async function fzfSearch(
 
     // Header
     console.log(chalk.bold.cyan("🔍 Search Skills"));
-    console.log(
-      chalk.dim("Type to search • ↑↓ navigate • Enter select • Esc cancel"),
-    );
+    console.log(chalk.dim("Type to search • ↑↓ navigate • Enter select • Esc cancel"));
     console.log("");
 
     // Search input with cursor
@@ -99,7 +95,7 @@ export async function fzfSearch(
         if (isSelected && skill.description) {
           const desc =
             skill.description.length > 70
-              ? skill.description.slice(0, 67) + "..."
+              ? `${skill.description.slice(0, 67)}...`
               : skill.description;
           console.log(chalk.dim(`      ${desc}`));
         }
@@ -107,9 +103,7 @@ export async function fzfSearch(
 
       if (state.results.length > 10) {
         console.log("");
-        console.log(
-          chalk.dim(`  ... and ${state.results.length - 10} more results`),
-        );
+        console.log(chalk.dim(`  ... and ${state.results.length - 10} more results`));
       }
     }
   }
@@ -143,7 +137,7 @@ export async function fzfSearch(
       }));
 
       state.selectedIndex = 0;
-    } catch (err) {
+    } catch (_err) {
       state.results = [];
     }
 
@@ -201,10 +195,7 @@ export async function fzfSearch(
 
     // Down arrow
     if (key.name === "down") {
-      state.selectedIndex = Math.min(
-        state.results.length - 1,
-        state.selectedIndex + 1,
-      );
+      state.selectedIndex = Math.min(state.results.length - 1, state.selectedIndex + 1);
       render();
       return;
     }

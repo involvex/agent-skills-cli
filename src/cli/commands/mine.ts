@@ -4,12 +4,12 @@
  * (SkillKit calls this "learn" — we call it "mine")
  */
 
+import { execSync } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { execSync } from "child_process";
-import { writeFile, mkdir } from "fs/promises";
-import { resolve, join } from "path";
 
 interface MineOptions {
   depth?: string;
@@ -46,7 +46,7 @@ export function registerMineCommand(program: Command): void {
 }
 
 async function mineCommand(options: MineOptions): Promise<void> {
-  const depth = parseInt(options.depth || "100");
+  const depth = Number.parseInt(options.depth || "100");
   const spinner = ora(`Analyzing last ${depth} commits...`).start();
 
   // Check if we're in a git repo
@@ -134,10 +134,7 @@ function mineCommitPatterns(depth: number): MinedPattern[] {
       }
     }
 
-    const conventionalTotal = Object.values(prefixCounts).reduce(
-      (a, b) => a + b,
-      0,
-    );
+    const conventionalTotal = Object.values(prefixCounts).reduce((a, b) => a + b, 0);
     if (conventionalTotal > messages.length * 0.3) {
       patterns.push({
         type: "commit-convention",
@@ -151,8 +148,7 @@ function mineCommitPatterns(depth: number): MinedPattern[] {
     }
 
     // Detect other patterns
-    const avgLength =
-      messages.reduce((a, m) => a + m.length, 0) / messages.length;
+    const avgLength = messages.reduce((a, m) => a + m.length, 0) / messages.length;
     patterns.push({
       type: "commit-style",
       pattern: `Average commit message: ${Math.round(avgLength)} chars`,
@@ -170,10 +166,10 @@ function mineFilePatterns(depth: number): MinedPattern[] {
   const patterns: MinedPattern[] = [];
 
   try {
-    const log = execSync(
-      `git log --name-only --oneline -${depth} --format=""`,
-      { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] },
-    );
+    const log = execSync(`git log --name-only --oneline -${depth} --format=""`, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
     const files = log.trim().split("\n").filter(Boolean);
 
     // Count most changed files
@@ -225,10 +221,10 @@ function mineLanguagePatterns(depth: number): MinedPattern[] {
   const patterns: MinedPattern[] = [];
 
   try {
-    const log = execSync(
-      `git log --name-only --oneline -${depth} --format=""`,
-      { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] },
-    );
+    const log = execSync(`git log --name-only --oneline -${depth} --format=""`, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
     const files = log.trim().split("\n").filter(Boolean);
 
     const extCounts: Record<string, number> = {};

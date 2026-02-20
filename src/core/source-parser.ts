@@ -15,7 +15,7 @@
  * - Generic git URLs
  */
 
-import { isAbsolute, resolve } from "path";
+import { isAbsolute, resolve } from "node:path";
 
 export interface ParsedSource {
   type:
@@ -66,10 +66,7 @@ function isDirectSkillUrl(input: string): boolean {
   }
 
   // Exclude GitHub and GitLab repository URLs - they have their own handling
-  if (
-    input.includes("github.com/") &&
-    !input.includes("raw.githubusercontent.com")
-  ) {
+  if (input.includes("github.com/") && !input.includes("raw.githubusercontent.com")) {
     if (!input.includes("/blob/") && !input.includes("/raw/")) {
       return false;
     }
@@ -128,9 +125,7 @@ export function parseSource(input: string): ParsedSource {
   }
 
   // GitHub URL with path: https://github.com/owner/repo/tree/branch/path/to/skill
-  const githubTreeWithPathMatch = input.match(
-    /github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)\/(.+)/,
-  );
+  const githubTreeWithPathMatch = input.match(/github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)\/(.+)/);
   if (githubTreeWithPathMatch) {
     const [, owner, repo, ref, subpath] = githubTreeWithPathMatch;
     return {
@@ -142,9 +137,7 @@ export function parseSource(input: string): ParsedSource {
   }
 
   // GitHub URL with branch only: https://github.com/owner/repo/tree/branch
-  const githubTreeMatch = input.match(
-    /github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)$/,
-  );
+  const githubTreeMatch = input.match(/github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)$/);
   if (githubTreeMatch) {
     const [, owner, repo, ref] = githubTreeMatch;
     return {
@@ -158,7 +151,7 @@ export function parseSource(input: string): ParsedSource {
   const githubRepoMatch = input.match(/github\.com\/([^/]+)\/([^/]+)/);
   if (githubRepoMatch) {
     const [, owner, repo] = githubRepoMatch;
-    const cleanRepo = repo!.replace(/\.git$/, "");
+    const cleanRepo = repo?.replace(/\.git$/, "");
     return {
       type: "github",
       url: `https://github.com/${owner}/${cleanRepo}.git`,
@@ -180,9 +173,7 @@ export function parseSource(input: string): ParsedSource {
   }
 
   // GitLab URL with branch only: https://gitlab.com/owner/repo/-/tree/branch
-  const gitlabTreeMatch = input.match(
-    /gitlab\.com\/([^/]+)\/([^/]+)\/-\/tree\/([^/]+)$/,
-  );
+  const gitlabTreeMatch = input.match(/gitlab\.com\/([^/]+)\/([^/]+)\/-\/tree\/([^/]+)$/);
   if (gitlabTreeMatch) {
     const [, owner, repo, ref] = gitlabTreeMatch;
     return {
@@ -196,7 +187,7 @@ export function parseSource(input: string): ParsedSource {
   const gitlabRepoMatch = input.match(/gitlab\.com\/([^/]+)\/([^/]+)/);
   if (gitlabRepoMatch) {
     const [, owner, repo] = gitlabRepoMatch;
-    const cleanRepo = repo!.replace(/\.git$/, "");
+    const cleanRepo = repo?.replace(/\.git$/, "");
     return {
       type: "gitlab",
       url: `https://gitlab.com/${owner}/${cleanRepo}.git`,
@@ -204,9 +195,7 @@ export function parseSource(input: string): ParsedSource {
   }
 
   // Bitbucket URL with path: https://bitbucket.org/owner/repo/src/branch/path
-  const bitbucketSrcMatch = input.match(
-    /bitbucket\.org\/([^/]+)\/([^/]+)\/src\/([^/]+)\/(.+)/,
-  );
+  const bitbucketSrcMatch = input.match(/bitbucket\.org\/([^/]+)\/([^/]+)\/src\/([^/]+)\/(.+)/);
   if (bitbucketSrcMatch) {
     const [, owner, repo, ref, subpath] = bitbucketSrcMatch;
     return {
@@ -218,9 +207,7 @@ export function parseSource(input: string): ParsedSource {
   }
 
   // Bitbucket URL with branch: https://bitbucket.org/owner/repo/src/branch
-  const bitbucketBranchMatch = input.match(
-    /bitbucket\.org\/([^/]+)\/([^/]+)\/src\/([^/]+)$/,
-  );
+  const bitbucketBranchMatch = input.match(/bitbucket\.org\/([^/]+)\/([^/]+)\/src\/([^/]+)$/);
   if (bitbucketBranchMatch) {
     const [, owner, repo, ref] = bitbucketBranchMatch;
     return {
@@ -234,7 +221,7 @@ export function parseSource(input: string): ParsedSource {
   const bitbucketRepoMatch = input.match(/bitbucket\.org\/([^/]+)\/([^/]+)/);
   if (bitbucketRepoMatch) {
     const [, owner, repo] = bitbucketRepoMatch;
-    const cleanRepo = repo!.replace(/\.git$/, "");
+    const cleanRepo = repo?.replace(/\.git$/, "");
     return {
       type: "bitbucket",
       url: `https://bitbucket.org/${owner}/${cleanRepo}.git`,
@@ -244,17 +231,12 @@ export function parseSource(input: string): ParsedSource {
   // GitHub shorthand: owner/repo or owner/repo/path/to/skill
   // But NOT if 'owner' looks like a domain name (contains dots, e.g. git.company.com)
   const shorthandMatch = input.match(/^([^/]+)\/([^/]+)(?:\/(.+))?$/);
-  if (
-    shorthandMatch &&
-    !input.includes(":") &&
-    !input.startsWith(".") &&
-    !input.startsWith("/")
-  ) {
+  if (shorthandMatch && !input.includes(":") && !input.startsWith(".") && !input.startsWith("/")) {
     const [, owner, repo, subpath] = shorthandMatch;
 
     // If the 'owner' part contains dots, it's likely a domain name (e.g. git.wosai-inc.com)
     // Treat it as a self-hosted Git URL instead of GitHub shorthand
-    if (owner!.includes(".")) {
+    if (owner?.includes(".")) {
       const fullPath = subpath ? `${repo}/${subpath}` : repo;
       return {
         type: "private-git",
@@ -334,9 +316,7 @@ function isWellKnownUrl(input: string): boolean {
       "/skills.json",
       "/skill-registry",
     ];
-    return wellKnownPatterns.some((pattern) =>
-      parsed.pathname.includes(pattern),
-    );
+    return wellKnownPatterns.some((pattern) => parsed.pathname.includes(pattern));
   } catch {
     return false;
   }
@@ -359,9 +339,7 @@ export function getOwnerRepo(parsed: ParsedSource): string | null {
   }
 
   // Extract from SSH URL: git@host:owner/repo.git
-  const sshOwnerRepo = parsed.url.match(
-    /^git@[^:]+:([^/]+)\/([^/]+?)(?:\.git)?$/,
-  );
+  const sshOwnerRepo = parsed.url.match(/^git@[^:]+:([^/]+)\/([^/]+?)(?:\.git)?$/);
   if (sshOwnerRepo) {
     return `${sshOwnerRepo[1]}/${sshOwnerRepo[2]}`;
   }

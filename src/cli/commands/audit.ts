@@ -4,18 +4,18 @@
  * (SkillKit calls this "scan" — we call it "audit")
  */
 
+import { resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { resolve } from "path";
 import {
+  type AuditOptions,
+  type ScanFinding,
+  type ScanResult,
+  type Severity,
   runAudit,
   shouldFail,
   toSARIF,
-  type ScanResult,
-  type ScanFinding,
-  type Severity,
-  type AuditOptions,
 } from "../../core/audit.js";
 
 /**
@@ -26,19 +26,12 @@ export function registerAuditCommand(program: Command): void {
     .command("audit <path>")
     .alias("scan")
     .description("Security audit — scan skills for vulnerabilities")
-    .option(
-      "-f, --format <format>",
-      "Output format: summary, json, table, sarif",
-      "summary",
-    )
+    .option("-f, --format <format>", "Output format: summary, json, table, sarif", "summary")
     .option(
       "--fail-on <severity>",
       "Exit code 1 if findings at this severity or above (critical, high, medium, low)",
     )
-    .option(
-      "--skip-rules <rules>",
-      "Comma-separated rule IDs or categories to skip",
-    )
+    .option("--skip-rules <rules>", "Comma-separated rule IDs or categories to skip")
     .action(async (path: string, options: any) => {
       try {
         const auditOptions: AuditOptions = {
@@ -60,10 +53,7 @@ export function registerAuditCommand(program: Command): void {
 /**
  * Run the audit command
  */
-async function auditCommand(
-  targetPath: string,
-  options: AuditOptions,
-): Promise<void> {
+async function auditCommand(targetPath: string, options: AuditOptions): Promise<void> {
   const resolvedPath = resolve(targetPath);
   const spinner = ora("Scanning for security vulnerabilities...").start();
 
@@ -85,8 +75,6 @@ async function auditCommand(
     case "table":
       printTable(result);
       break;
-
-    case "summary":
     default:
       printSummary(result);
       break;
@@ -95,11 +83,7 @@ async function auditCommand(
   // Exit with error if threshold exceeded
   if (options.failOn && shouldFail(result, options.failOn)) {
     console.log("");
-    console.log(
-      chalk.red(
-        `✖ Audit failed: findings at ${options.failOn} severity or above`,
-      ),
-    );
+    console.log(chalk.red(`✖ Audit failed: findings at ${options.failOn} severity or above`));
     process.exit(1);
   }
 }
@@ -129,9 +113,7 @@ function printSummary(result: ScanResult): void {
     console.log(chalk.bold.underline(file));
     console.log("");
 
-    for (const f of findings.sort(
-      (a, b) => severityRank(a.severity) - severityRank(b.severity),
-    )) {
+    for (const f of findings.sort((a, b) => severityRank(a.severity) - severityRank(b.severity))) {
       const icon = severityIcon(f.severity);
       const color = severityColor(f.severity);
       const ruleId = chalk.dim(`[${f.ruleId}]`);
@@ -146,16 +128,11 @@ function printSummary(result: ScanResult): void {
 
   // Print summary bar
   const parts: string[] = [];
-  if (result.summary.critical > 0)
-    parts.push(chalk.red(`${result.summary.critical} critical`));
-  if (result.summary.high > 0)
-    parts.push(chalk.red(`${result.summary.high} high`));
-  if (result.summary.medium > 0)
-    parts.push(chalk.yellow(`${result.summary.medium} medium`));
-  if (result.summary.low > 0)
-    parts.push(chalk.dim(`${result.summary.low} low`));
-  if (result.summary.info > 0)
-    parts.push(chalk.dim(`${result.summary.info} info`));
+  if (result.summary.critical > 0) parts.push(chalk.red(`${result.summary.critical} critical`));
+  if (result.summary.high > 0) parts.push(chalk.red(`${result.summary.high} high`));
+  if (result.summary.medium > 0) parts.push(chalk.yellow(`${result.summary.medium} medium`));
+  if (result.summary.low > 0) parts.push(chalk.dim(`${result.summary.low} low`));
+  if (result.summary.info > 0) parts.push(chalk.dim(`${result.summary.info} info`));
 
   console.log(
     chalk.bold(
@@ -235,5 +212,5 @@ function severityColor(severity: Severity): (s: string) => string {
 
 function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
-  return str.slice(0, maxLen - 1) + "…";
+  return `${str.slice(0, maxLen - 1)}…`;
 }

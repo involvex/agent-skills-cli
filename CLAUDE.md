@@ -49,7 +49,6 @@ license: MIT
 compatibility: 1.0.0
 allowed-tools: Bash Read Write
 ---
-
 # Instructions
 
 Your skill instructions here...
@@ -114,6 +113,7 @@ Recent release introduced 10 unique features:
 ## Type Definitions
 
 Core types (`src/types/index.ts`):
+
 - `Skill` - Full skill with metadata, body, path
 - `SkillMetadata` - Frontmatter data (name, description, license, etc.)
 - `SkillRef` - Lightweight reference for discovery

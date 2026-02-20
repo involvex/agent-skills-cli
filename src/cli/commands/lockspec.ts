@@ -4,17 +4,13 @@
  * (SkillKit calls this "manifest" — we call it "lockspec")
  */
 
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { readFile, writeFile } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve } from "path";
-import {
-  readLock,
-  listInstalledSkills,
-  type LockEntry,
-} from "../../core/skill-lock.js";
+import { listInstalledSkills } from "../../core/skill-lock.js";
 
 interface LockspecManifest {
   version: string;
@@ -140,9 +136,7 @@ async function lockspecVerify(filePath?: string): Promise<void> {
 
   const spinner = ora("Verifying installation...").start();
 
-  const manifest: LockspecManifest = JSON.parse(
-    await readFile(lockspecPath, "utf-8"),
-  );
+  const manifest: LockspecManifest = JSON.parse(await readFile(lockspecPath, "utf-8"));
   const installed = await listInstalledSkills();
   const installedNames = new Set(installed.map((s) => s.name));
 
@@ -171,8 +165,7 @@ async function lockspecVerify(filePath?: string): Promise<void> {
     spinner.warn("Installation differs from lockspec");
     console.log("");
     if (missing > 0) console.log(chalk.red(`  ${missing} missing skill(s)`));
-    if (extra > 0)
-      console.log(chalk.yellow(`  ${extra} extra skill(s) not in lockspec`));
+    if (extra > 0) console.log(chalk.yellow(`  ${extra} extra skill(s) not in lockspec`));
     console.log(chalk.dim(`  ${matches} skill(s) match`));
   }
   console.log("");
@@ -186,9 +179,7 @@ async function lockspecDiff(filePath?: string): Promise<void> {
     process.exit(1);
   }
 
-  const manifest: LockspecManifest = JSON.parse(
-    await readFile(lockspecPath, "utf-8"),
-  );
+  const manifest: LockspecManifest = JSON.parse(await readFile(lockspecPath, "utf-8"));
   const installed = await listInstalledSkills();
 
   const installedMap = new Map(installed.map((s) => [s.name, s]));
@@ -232,9 +223,7 @@ async function lockspecDiff(filePath?: string): Promise<void> {
   }
 
   if (!hasDiff) {
-    console.log(
-      chalk.green("  No differences — installation matches lockspec"),
-    );
+    console.log(chalk.green("  No differences — installation matches lockspec"));
   }
 
   console.log("");

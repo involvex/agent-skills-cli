@@ -4,12 +4,12 @@
  * (SkillKit calls this "session" — we call it "track")
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import chalk from "chalk";
-import { Command } from "commander";
-import { readFile, writeFile, mkdir, readdir } from "fs/promises";
-import { existsSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
+import type { Command } from "commander";
 
 interface SessionSnapshot {
   id: string;
@@ -28,10 +28,7 @@ const SESSIONS_DIR = join(homedir(), ".agent-skills", "sessions");
  * Register the track command
  */
 export function registerTrackCommand(program: Command): void {
-  const track = program
-    .command("track")
-    .alias("tk")
-    .description("Session state tracking");
+  const track = program.command("track").alias("tk").description("Session state tracking");
 
   track
     .command("save <name>")
@@ -105,7 +102,7 @@ async function trackSave(name: string, notes?: string): Promise<void> {
   // Get current git branch
   let branch: string | undefined;
   try {
-    const { execSync } = await import("child_process");
+    const { execSync } = await import("node:child_process");
     branch = execSync("git rev-parse --abbrev-ref HEAD", {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
@@ -117,7 +114,7 @@ async function trackSave(name: string, notes?: string): Promise<void> {
   // Get recently modified files
   let activeFiles: string[] = [];
   try {
-    const { execSync } = await import("child_process");
+    const { execSync } = await import("node:child_process");
     const result = execSync("git diff --name-only HEAD 2>/dev/null || true", {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
@@ -143,8 +140,7 @@ async function trackSave(name: string, notes?: string): Promise<void> {
   await writeFile(getSessionPath(name), JSON.stringify(snapshot, null, 2));
   console.log(chalk.green(`✓ Session saved: ${chalk.cyan(name)}`));
   if (branch) console.log(chalk.dim(`  Branch: ${branch}`));
-  if (activeFiles.length > 0)
-    console.log(chalk.dim(`  Active files: ${activeFiles.length}`));
+  if (activeFiles.length > 0) console.log(chalk.dim(`  Active files: ${activeFiles.length}`));
 }
 
 async function trackRestore(name: string): Promise<void> {
@@ -160,10 +156,8 @@ async function trackRestore(name: string): Promise<void> {
   console.log(chalk.bold(`🔄 Restoring session: ${chalk.cyan(name)}`));
   console.log("");
   console.log(`  ${chalk.dim("Directory:")} ${snapshot.cwd}`);
-  if (snapshot.branch)
-    console.log(`  ${chalk.dim("Branch:")}    ${snapshot.branch}`);
-  if (snapshot.notes)
-    console.log(`  ${chalk.dim("Notes:")}     ${snapshot.notes}`);
+  if (snapshot.branch) console.log(`  ${chalk.dim("Branch:")}    ${snapshot.branch}`);
+  if (snapshot.notes) console.log(`  ${chalk.dim("Notes:")}     ${snapshot.notes}`);
 
   if (snapshot.activeFiles.length > 0) {
     console.log("");
@@ -175,9 +169,7 @@ async function trackRestore(name: string): Promise<void> {
 
   if (snapshot.branch) {
     console.log("");
-    console.log(
-      chalk.dim(`  To switch branch: git checkout ${snapshot.branch}`),
-    );
+    console.log(chalk.dim(`  To switch branch: git checkout ${snapshot.branch}`));
   }
   console.log("");
 }
@@ -203,13 +195,9 @@ async function trackList(): Promise<void> {
         await readFile(join(SESSIONS_DIR, file), "utf-8"),
       );
       const age = timeAgo(new Date(snapshot.timestamp));
-      console.log(
-        `  ${chalk.cyan("●")} ${chalk.bold(snapshot.name)} ${chalk.dim(`(${age})`)}`,
-      );
-      if (snapshot.branch)
-        console.log(`    ${chalk.dim("branch:")} ${snapshot.branch}`);
-      if (snapshot.notes)
-        console.log(`    ${chalk.dim("notes:")} ${snapshot.notes}`);
+      console.log(`  ${chalk.cyan("●")} ${chalk.bold(snapshot.name)} ${chalk.dim(`(${age})`)}`);
+      if (snapshot.branch) console.log(`    ${chalk.dim("branch:")} ${snapshot.branch}`);
+      if (snapshot.notes) console.log(`    ${chalk.dim("notes:")} ${snapshot.notes}`);
     } catch {
       /* skip corrupt files */
     }
@@ -233,7 +221,7 @@ async function trackDelete(name: string): Promise<void> {
     console.error(chalk.red(`Session "${name}" not found`));
     return;
   }
-  const { unlink } = await import("fs/promises");
+  const { unlink } = await import("node:fs/promises");
   await unlink(path);
   console.log(chalk.green(`✓ Deleted session: ${name}`));
 }

@@ -4,12 +4,12 @@
  * (SkillKit calls this "ai generate" — we call it "forge")
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join } from "path";
 
 interface ForgeOptions {
   output?: string;
@@ -40,10 +40,7 @@ export function registerForgeCommand(program: Command): void {
     });
 }
 
-async function forgeCommand(
-  description: string,
-  options: ForgeOptions,
-): Promise<void> {
+async function forgeCommand(description: string, options: ForgeOptions): Promise<void> {
   const spinner = ora("Forging skill from description...").start();
 
   // Extract key concepts from description
@@ -84,9 +81,7 @@ async function forgeCommand(
   console.log("");
   console.log(chalk.dim("Next steps:"));
   console.log(chalk.dim(`  1. Review and edit ${skillDir}/SKILL.md`));
-  console.log(
-    chalk.dim(`  2. Run ${chalk.white(`skills validate ${skillDir}`)}`),
-  );
+  console.log(chalk.dim(`  2. Run ${chalk.white(`skills validate ${skillDir}`)}`));
   console.log(chalk.dim(`  3. Run ${chalk.white(`skills audit ${skillDir}`)}`));
   console.log("");
 }
@@ -165,11 +160,7 @@ function generateSkillName(description: string): string {
   return name || "forged-skill";
 }
 
-function generateSkillContent(
-  name: string,
-  description: string,
-  concepts: string[],
-): string {
+function generateSkillContent(name: string, description: string, concepts: string[]): string {
   const displayName = name
     .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))

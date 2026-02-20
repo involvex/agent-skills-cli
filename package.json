@@ -10,12 +10,21 @@
     "agent-skills": "./dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "bun run build:fast",
     "build:fast": "tsup src/cli/index.ts src/index.ts --format esm --dts --clean --outDir dist",
-    "dev": "bun run .\\src\\cli\\index.ts",
-    "start": "node dist/cli/index.js",
-    "test": "vitest",
-    "prepublishOnly": "npm run build"
+    "dev": "bun run src/cli/index.ts",
+    "start": "bun run dist/cli/index.js",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "lint": "bun biome check src/",
+    "lint:fix": "bun biome check --write src/",
+    "typecheck": "tsc --noEmit",
+    "format": "bun biome format --write src/",
+    "format:check": "bun biome format --check src/",
+    "check": "bun run typecheck && bun run lint",
+    "prebuild": "bun run format && bun run check",
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "agent-skills",
@@ -60,6 +69,7 @@
     "yaml": "^2.8.2"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/node": "20.19.27",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",

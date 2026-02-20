@@ -6,8 +6,8 @@
  * and feature detection.
  */
 
-import { homedir } from "os";
-import { join } from "path";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 // ── Interface ────────────────────────────────────────────────────────────
 
@@ -74,9 +74,7 @@ export abstract class BaseAdapter implements AgentAdapter {
     if (parsed.frontmatter && Object.keys(parsed.frontmatter).length > 0) {
       lines.push("---");
       for (const [key, value] of Object.entries(parsed.frontmatter)) {
-        lines.push(
-          `${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`,
-        );
+        lines.push(`${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`);
       }
       lines.push("---");
       lines.push("");

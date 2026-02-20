@@ -4,12 +4,12 @@
  * (Unique feature — no SkillKit equivalent)
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 import chalk from "chalk";
+import type { Command } from "commander";
 import ora from "ora";
-import { Command } from "commander";
-import { writeFile, readFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { resolve, join, basename } from "path";
 
 interface CaptureOptions {
   name?: string;
@@ -40,15 +40,11 @@ export function registerCaptureCommand(program: Command): void {
     });
 }
 
-async function captureCommand(
-  source: string,
-  options: CaptureOptions,
-): Promise<void> {
+async function captureCommand(source: string, options: CaptureOptions): Promise<void> {
   const spinner = ora("Capturing...").start();
 
   // Detect source type
-  const sourceType =
-    options.type === "auto" ? detectSourceType(source) : options.type!;
+  const sourceType = options.type === "auto" ? detectSourceType(source) : options.type!;
   let content = "";
   let sourceName = "";
 
@@ -66,7 +62,7 @@ async function captureCommand(
       }
       break;
 
-    case "file":
+    case "file": {
       const filePath = resolve(source);
       if (!existsSync(filePath)) {
         spinner.fail(`File not found: ${filePath}`);
@@ -75,6 +71,7 @@ async function captureCommand(
       content = await readFile(filePath, "utf-8");
       sourceName = basename(filePath, ".md").replace(/\s+/g, "-").toLowerCase();
       break;
+    }
 
     case "text":
       content = source;
@@ -89,8 +86,7 @@ async function captureCommand(
   // Build skill
   const skillName = options.name || sourceName || "captured-skill";
   const tags = options.tags ? options.tags.split(",").map((t) => t.trim()) : [];
-  const tagsYaml =
-    tags.length > 0 ? `\ntags:\n${tags.map((t) => `  - ${t}`).join("\n")}` : "";
+  const tagsYaml = tags.length > 0 ? `\ntags:\n${tags.map((t) => `  - ${t}`).join("\n")}` : "";
 
   const skillContent = `---
 name: ${skillName}
@@ -120,18 +116,13 @@ ${content.substring(0, 10000)}${content.length > 10000 ? "\n\n... (truncated)" :
   console.log("");
   console.log(`  ${chalk.dim("Source:")}  ${source}`);
   console.log(`  ${chalk.dim("Type:")}    ${sourceType}`);
-  console.log(
-    `  ${chalk.dim("Output:")}  ${chalk.cyan(join(skillDir, "SKILL.md"))}`,
-  );
-  console.log(
-    `  ${chalk.dim("Size:")}    ${(content.length / 1024).toFixed(1)} KB`,
-  );
+  console.log(`  ${chalk.dim("Output:")}  ${chalk.cyan(join(skillDir, "SKILL.md"))}`);
+  console.log(`  ${chalk.dim("Size:")}    ${(content.length / 1024).toFixed(1)} KB`);
   console.log("");
 }
 
 function detectSourceType(source: string): string {
-  if (source.startsWith("http://") || source.startsWith("https://"))
-    return "url";
+  if (source.startsWith("http://") || source.startsWith("https://")) return "url";
   if (existsSync(resolve(source))) return "file";
   return "text";
 }

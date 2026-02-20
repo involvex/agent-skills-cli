@@ -1,20 +1,19 @@
+import chalk from "chalk";
 /**
  * Interactive wizard commands — install-wizard, export-interactive, setup
  * Also: run, context, preview, scripts, completion, info
  */
-import { Command } from "commander";
-import chalk from "chalk";
-import ora from "ora";
+import type { Command } from "commander";
 import inquirer from "inquirer";
+import ora from "ora";
 import {
   discoverSkills,
-  loadSkill,
-  listMarketplaceSkills,
-  installSkill,
-  generateSkillsPromptXML,
   generateFullSkillsContext,
+  generateSkillsPromptXML,
+  installSkill,
+  listMarketplaceSkills,
+  loadSkill,
 } from "../../core/index.js";
-import { AGENTS } from "../agents.js";
 
 type AgentTarget = "copilot" | "cursor" | "claude" | "codex" | "antigravity";
 
@@ -31,10 +30,7 @@ async function exportToAgent(
     if (skill) loadedSkills.push(skill);
   }
 
-  const exportFns: Record<
-    AgentTarget,
-    (s: any[], d: string, f: any) => Promise<void>
-  > = {
+  const exportFns: Record<AgentTarget, (s: any[], d: string, f: any) => Promise<void>> = {
     copilot: exportToCopilot,
     cursor: exportToCursor,
     claude: exportToClaude,
@@ -55,9 +51,7 @@ async function exportToCopilot(skills: any[], projectDir: string, fs: any) {
     const content = `---\nname: ${skill.metadata.name}\ndescription: ${skill.metadata.description}\n---\n\n${skill.body}\n`;
     await fs.writeFile(fs.join(skillDir, "SKILL.md"), content);
   }
-  console.log(
-    chalk.green(`  ✓ GitHub Copilot: .github/skills/<skill>/SKILL.md`),
-  );
+  console.log(chalk.green("  ✓ GitHub Copilot: .github/skills/<skill>/SKILL.md"));
 }
 
 async function exportToCursor(skills: any[], projectDir: string, fs: any) {
@@ -69,7 +63,7 @@ async function exportToCursor(skills: any[], projectDir: string, fs: any) {
     const content = `---\nname: ${skill.metadata.name}\ndescription: ${skill.metadata.description}\n---\n\n${skill.body}\n`;
     await fs.writeFile(fs.join(skillDir, "SKILL.md"), content);
   }
-  console.log(chalk.green(`  ✓ Cursor: .cursor/skills/<skill>/SKILL.md`));
+  console.log(chalk.green("  ✓ Cursor: .cursor/skills/<skill>/SKILL.md"));
 }
 
 async function exportToClaude(skills: any[], projectDir: string, fs: any) {
@@ -81,7 +75,7 @@ async function exportToClaude(skills: any[], projectDir: string, fs: any) {
     const content = `---\nname: ${skill.metadata.name}\ndescription: ${skill.metadata.description}\n---\n\n${skill.body}\n`;
     await fs.writeFile(fs.join(skillDir, "SKILL.md"), content);
   }
-  console.log(chalk.green(`  ✓ Claude Code: .claude/skills/<skill>/SKILL.md`));
+  console.log(chalk.green("  ✓ Claude Code: .claude/skills/<skill>/SKILL.md"));
 }
 
 async function exportToCodex(skills: any[], projectDir: string, fs: any) {
@@ -93,7 +87,7 @@ async function exportToCodex(skills: any[], projectDir: string, fs: any) {
     const content = `---\nname: ${skill.metadata.name}\ndescription: ${skill.metadata.description}\n---\n\n${skill.body}\n`;
     await fs.writeFile(fs.join(skillDir, "SKILL.md"), content);
   }
-  console.log(chalk.green(`  ✓ OpenAI Codex: .codex/skills/<skill>/SKILL.md`));
+  console.log(chalk.green("  ✓ OpenAI Codex: .codex/skills/<skill>/SKILL.md"));
 }
 
 async function exportToAntigravity(skills: any[], projectDir: string, fs: any) {
@@ -105,7 +99,7 @@ async function exportToAntigravity(skills: any[], projectDir: string, fs: any) {
     const content = `---\nname: ${skill.metadata.name}\ndescription: ${skill.metadata.description}\n---\n\n${skill.body}\n`;
     await fs.writeFile(fs.join(skillDir, "SKILL.md"), content);
   }
-  console.log(chalk.green(`  ✓ Antigravity: .agent/skills/<skill>/SKILL.md`));
+  console.log(chalk.green("  ✓ Antigravity: .agent/skills/<skill>/SKILL.md"));
 }
 
 export function registerInteractiveCommands(program: Command) {
@@ -135,8 +129,7 @@ export function registerInteractiveCommands(program: Command) {
           {
             type: "checkbox",
             name: "selectedSkills",
-            message:
-              "Select skills to install (Space to select, Enter to confirm):",
+            message: "Select skills to install (Space to select, Enter to confirm):",
             choices,
             pageSize: 15,
           },
@@ -158,9 +151,7 @@ export function registerInteractiveCommands(program: Command) {
         }
 
         console.log(chalk.bold.green("\n✓ Installation complete!"));
-        console.log(
-          chalk.gray('Run "skills export" to export to your AI agent.'),
-        );
+        console.log(chalk.gray('Run "skills export" to export to your AI agent.'));
       } catch (error) {
         console.error(chalk.red("Error:"), error);
         process.exit(1);
@@ -221,15 +212,11 @@ export function registerInteractiveCommands(program: Command) {
           return;
         }
 
-        const { mkdir, writeFile, appendFile } = await import("fs/promises");
-        const { join } = await import("path");
-        const { existsSync } = await import("fs");
+        const { mkdir, writeFile, appendFile } = await import("node:fs/promises");
+        const { join } = await import("node:path");
+        const { existsSync } = await import("node:fs");
 
-        console.log(
-          chalk.bold(
-            `\nExporting ${skills.length} skill(s) to: ${agents.join(", ")}\n`,
-          ),
-        );
+        console.log(chalk.bold(`\nExporting ${skills.length} skill(s) to: ${agents.join(", ")}\n`));
 
         for (const target of agents) {
           const spinner = ora(`Exporting to ${target}...`).start();
@@ -253,9 +240,7 @@ export function registerInteractiveCommands(program: Command) {
   // Setup wizard
   program
     .command("setup")
-    .description(
-      "Interactive setup wizard - install skills and export to your agents",
-    )
+    .description("Interactive setup wizard - install skills and export to your agents")
     .action(async () => {
       console.log(chalk.bold.cyan("\n🚀 Agent Skills Setup Wizard\n"));
 
@@ -301,7 +286,7 @@ export function registerInteractiveCommands(program: Command) {
             try {
               await installSkill(skillName);
               installSpinner.succeed(`Installed: ${skillName}`);
-            } catch (err) {
+            } catch (_err) {
               installSpinner.fail(`Failed: ${skillName}`);
             }
           }
@@ -324,9 +309,9 @@ export function registerInteractiveCommands(program: Command) {
         ]);
 
         const skills = await discoverSkills();
-        const { mkdir, writeFile, appendFile } = await import("fs/promises");
-        const { join } = await import("path");
-        const { existsSync } = await import("fs");
+        const { mkdir, writeFile, appendFile } = await import("node:fs/promises");
+        const { join } = await import("node:path");
+        const { existsSync } = await import("node:fs");
 
         for (const target of agents) {
           const spinner = ora(`Exporting to ${target}...`).start();
@@ -342,9 +327,7 @@ export function registerInteractiveCommands(program: Command) {
       }
 
       console.log(chalk.bold.green("\n✨ Setup complete!"));
-      console.log(
-        chalk.gray("Your skills are now ready to use in your AI agents.\n"),
-      );
+      console.log(chalk.gray("Your skills are now ready to use in your AI agents.\n"));
     });
 
   // Run command
@@ -355,11 +338,10 @@ export function registerInteractiveCommands(program: Command) {
     .option("--timeout <ms>", "Timeout in milliseconds", "30000")
     .action(async (skillName, script, options) => {
       try {
-        const { executeScript, listScripts } =
-          await import("../../core/executor.js");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
-        const { existsSync } = await import("fs");
+        const { executeScript, listScripts } = await import("../../core/executor.js");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
+        const { existsSync } = await import("node:fs");
 
         const skillsDir = join(homedir(), ".antigravity", "skills");
         const skillPath = join(skillsDir, skillName);
@@ -367,18 +349,14 @@ export function registerInteractiveCommands(program: Command) {
         if (!existsSync(skillPath)) {
           console.error(chalk.red(`Skill not found: ${skillName}`));
           console.log(chalk.gray(`Expected at: ${skillPath}`));
-          console.log(
-            chalk.gray("\nInstall with: skills install <skill-name>"),
-          );
+          console.log(chalk.gray("\nInstall with: skills install <skill-name>"));
           process.exit(1);
         }
 
         const scripts = await listScripts(skillPath);
         if (scripts.length === 0) {
           console.log(chalk.yellow(`No scripts found in ${skillName}`));
-          console.log(
-            chalk.gray("Skills can have scripts in the scripts/ directory."),
-          );
+          console.log(chalk.gray("Skills can have scripts in the scripts/ directory."));
           return;
         }
 
@@ -391,12 +369,9 @@ export function registerInteractiveCommands(program: Command) {
 
         const spinner = ora(`Running ${script}...`).start();
 
-        const result = await executeScript(
-          skillPath,
-          script,
-          options.args || [],
-          { timeout: parseInt(options.timeout) },
-        );
+        const result = await executeScript(skillPath, script, options.args || [], {
+          timeout: Number.parseInt(options.timeout),
+        });
 
         if (result.success) {
           spinner.succeed(`Completed in ${result.executionTime}ms`);
@@ -421,15 +396,8 @@ export function registerInteractiveCommands(program: Command) {
   program
     .command("context")
     .description("Generate system prompt context for AI agents")
-    .option(
-      "-f, --format <format>",
-      "Output format: xml, json, markdown",
-      "xml",
-    )
-    .option(
-      "-s, --skills <skills...>",
-      "Specific skills to include (default: all installed)",
-    )
+    .option("-f, --format <format>", "Output format: xml, json, markdown", "xml")
+    .option("-s, --skills <skills...>", "Specific skills to include (default: all installed)")
     .option("-o, --output <file>", "Write to file instead of stdout")
     .action(async (options) => {
       try {
@@ -457,9 +425,7 @@ export function registerInteractiveCommands(program: Command) {
           output = result.xml;
           if (!options.output) {
             console.log(
-              chalk.gray(
-                `\n# ${result.skillCount} skills, ~${result.estimatedTokens} tokens\n`,
-              ),
+              chalk.gray(`\n# ${result.skillCount} skills, ~${result.estimatedTokens} tokens\n`),
             );
           }
         } else if (options.format === "json") {
@@ -480,7 +446,7 @@ export function registerInteractiveCommands(program: Command) {
         }
 
         if (options.output) {
-          const { writeFile } = await import("fs/promises");
+          const { writeFile } = await import("node:fs/promises");
           await writeFile(options.output, output);
           console.log(chalk.green(`✓ Written to ${options.output}`));
         } else {
@@ -505,8 +471,8 @@ export function registerInteractiveCommands(program: Command) {
         if (options.urlOnly) {
           console.log(url);
         } else {
-          const { exec } = await import("child_process");
-          const { promisify } = await import("util");
+          const { exec } = await import("node:child_process");
+          const { promisify } = await import("node:util");
           const execAsync = promisify(exec);
 
           const cmd =
@@ -531,12 +497,11 @@ export function registerInteractiveCommands(program: Command) {
     .description("List available scripts in an installed skill")
     .action(async (skillName) => {
       try {
-        const { listScripts, isScriptSafe } =
-          await import("../../core/executor.js");
-        const { homedir } = await import("os");
-        const { join } = await import("path");
-        const { existsSync } = await import("fs");
-        const { readFile } = await import("fs/promises");
+        const { listScripts, isScriptSafe } = await import("../../core/executor.js");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
+        const { existsSync } = await import("node:fs");
+        const { readFile } = await import("node:fs/promises");
 
         const skillsDir = join(homedir(), ".antigravity", "skills");
         const skillPath = join(skillsDir, skillName);
@@ -560,24 +525,18 @@ export function registerInteractiveCommands(program: Command) {
           try {
             const content = await readFile(scriptPath, "utf-8");
             const safety = isScriptSafe(content);
-            const safetyIcon = safety.safe
-              ? chalk.green("✓")
-              : chalk.yellow("⚠");
+            const safetyIcon = safety.safe ? chalk.green("✓") : chalk.yellow("⚠");
 
             console.log(`  ${safetyIcon} ${chalk.cyan(script)}`);
             if (!safety.safe) {
-              safety.warnings.forEach((w) =>
-                console.log(chalk.gray(`      Warning: ${w}`)),
-              );
+              safety.warnings.forEach((w) => console.log(chalk.gray(`      Warning: ${w}`)));
             }
           } catch {
             console.log(`  ${chalk.gray("?")} ${script}`);
           }
         }
 
-        console.log(
-          chalk.gray(`\nRun with: skills run ${skillName} <script>\n`),
-        );
+        console.log(chalk.gray(`\nRun with: skills run ${skillName} <script>\n`));
       } catch (error) {
         console.error(chalk.red("Error listing scripts:"), error);
         process.exit(1);
@@ -664,10 +623,10 @@ ${commands.map((c) => `complete -c skills -f -n "__fish_use_subcommand" -a "${c}
     .description("Show skills installation status and paths")
     .action(async () => {
       try {
-        const { homedir } = await import("os");
-        const { join } = await import("path");
-        const { existsSync } = await import("fs");
-        const { readdir } = await import("fs/promises");
+        const { homedir } = await import("node:os");
+        const { join } = await import("node:path");
+        const { existsSync } = await import("node:fs");
+        const { readdir } = await import("node:fs/promises");
 
         console.log(chalk.bold("\n📦 Skills CLI Info\n"));
 

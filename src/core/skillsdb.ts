@@ -78,9 +78,7 @@ export function parseScopedName(input: string): {
 /**
  * Fetch skills from the database API
  */
-export async function fetchFromDB(
-  options: FetchOptions = {},
-): Promise<SkillsDBResult> {
+export async function fetchFromDB(options: FetchOptions = {}): Promise<SkillsDBResult> {
   const params = new URLSearchParams();
 
   if (options.search) params.set("search", options.search);
@@ -112,9 +110,7 @@ export async function fetchFromDB(
  * Get a specific skill by scoped name
  * Returns exact match for @author/name, or first match for just name
  */
-export async function getSkillByScoped(
-  scopedName: string,
-): Promise<DBSkill | null> {
+export async function getSkillByScoped(scopedName: string): Promise<DBSkill | null> {
   const { author, name } = parseScopedName(scopedName);
 
   const result = await fetchFromDB({
@@ -320,7 +316,7 @@ export async function installFromGitHubUrl(
   const skillContent = await response.text();
 
   // Create directory and save SKILL.md
-  const { mkdir, writeFile } = await import("fs/promises");
+  const { mkdir, writeFile } = await import("node:fs/promises");
   await mkdir(destPath, { recursive: true });
   await writeFile(`${destPath}/SKILL.md`, skillContent);
 
